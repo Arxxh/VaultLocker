@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "VaultLocker",
+  "version": "1.0.0",
+  "description": "Password manager with local encryption and auto-detection for logins.",
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "VaultLocker"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/detectForms.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["dashboard/index.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
