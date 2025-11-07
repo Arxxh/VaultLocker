@@ -20,35 +20,35 @@ Está diseñado bajo una arquitectura modular con tres capas principales:
 
 ### **Extensión (MV3)**
 
-- **MV3 (Manifest Version 3)** → Base oficial de extensiones modernas de Chrome  
-- **Google Chrome / Chromium** → Ejecución nativa en el navegador  
-- **TypeScript** → Tipado estático y mantenibilidad  
-- **Chrome Extension APIs** → Comunicación interna  
-- **WebCrypto API** → Encriptación AES-GCM o Argon2id  
-- **IndexedDB** → Almacenamiento local cifrado  
+- **MV3 (Manifest Version 3)** → Base oficial de extensiones modernas de Chrome
+- **Google Chrome / Chromium** → Ejecución nativa en el navegador
+- **TypeScript** → Tipado estático y mantenibilidad
+- **Chrome Extension APIs** → Comunicación interna
+- **WebCrypto API** → Encriptación AES-GCM o Argon2id
+- **IndexedDB** → Almacenamiento local cifrado
 
 ---
 
 ### **Frontend**
 
-- **React + TypeScript** → Frameworks modernos para UI  
-- **TailwindCSS** → Estilos rápidos y consistentes  
-- **Vite + @crxjs/vite-plugin** → Empaquetado para extensiones MV3  
-- **React Hook Form + Zod** → Validación de formularios  
-- **Zustand / Redux Toolkit** → Gestión ligera del estado  
-- **Dexie.js** → Simplificación de IndexedDB  
+- **React + TypeScript** → Frameworks modernos para UI
+- **TailwindCSS** → Estilos rápidos y consistentes
+- **Vite + @crxjs/vite-plugin** → Empaquetado para extensiones MV3
+- **React Hook Form + Zod** → Validación de formularios
+- **Zustand / Redux Toolkit** → Gestión ligera del estado
+- **Dexie.js** → Simplificación de IndexedDB
 
 ---
 
 ### **Backend**
 
-- **NestJS (Node.js + TypeScript)** → Arquitectura modular y escalable  
-- **Prisma ORM** → Acceso eficiente a base de datos  
-- **PostgreSQL** → Base de datos relacional  
-- **Swagger** → Documentación automática  
-- **JWT** → Autenticación (futura)  
-- **Helmet + CORS** → Seguridad HTTP  
-- **Docker Compose** → Contenedorización (Postgres + API)  
+- **NestJS (Node.js + TypeScript)** → Arquitectura modular y escalable
+- **Prisma ORM** → Acceso eficiente a base de datos
+- **PostgreSQL** → Base de datos relacional
+- **Swagger** → Documentación automática
+- **JWT** → Autenticación (futura)
+- **Helmet + CORS** → Seguridad HTTP
+- **Docker Compose** → Contenedorización (Postgres + API)
 
 ---
 
@@ -59,3 +59,4 @@ Está diseñado bajo una arquitectura modular con tres capas principales:
 ```bash
 git clone https://github.com/Arxxh/VaultLocker.git
 cd VaultLocker
+```
