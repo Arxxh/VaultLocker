@@ -1,0 +1,45 @@
+import React, { useEffect, useState } from 'react';
+import ReactDOM from 'react-dom/client';
+import '../index.css';
+
+interface Credential {
+  id: string;
+  site: string;
+  username: string;
+  password: string;
+}
+
+const Popup = () => {
+  const [credentials, setCredentials] = useState<Credential[]>([]);
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (res) => {
+      if (res?.data) setCredentials(res.data);
+    });
+  }, []);
+
+  return (
+    <div className="p-4">
+      <h1 className="text-lg font-bold text-green-400 mb-3">VaultLocker</h1>
+
+      {credentials.length === 0 ? (
+        <p className="text-sm text-gray-400">No se han guardado credenciales.</p>
+      ) : (
+        <ul className="space-y-2">
+          {credentials.map((cred) => (
+            <li key={cred.id} className="border border-gray-700 p-2 rounded-md bg-gray-800">
+              <p className="text-sm font-semibold">{cred.site}</p>
+              <p className="text-xs text-gray-400">{cred.username}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
+  <React.StrictMode>
+    <Popup />
+  </React.StrictMode>
+);
