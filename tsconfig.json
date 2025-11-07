@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    /* === Paths === */
+    "rootDir": "./src",
+    "outDir": "./dist",
+
+    /* === Módulos y entorno === */
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "ESNext"],
+    "types": ["chrome"],
+
+    /* === Comportamiento === */
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+
+    /* === Depuración === */
+    "sourceMap": true,
+    "declaration": false,
+
+    /* === Limpieza === */
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}
