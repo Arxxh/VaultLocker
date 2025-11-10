@@ -26,6 +26,7 @@ export default tseslint.config(
       'react/prop-types': 'off',
       'prettier/prettier': 'error',
       'no-unused-vars': 'warn',
+      'eslint-comments/no-unused-disable': 'off',
     },
   }
 );
