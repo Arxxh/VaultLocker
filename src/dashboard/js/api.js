@@ -1,7 +1,12 @@
-export const API = 'http://localhost:3000'; // tu NestJS backend
+export const API = 'http://localhost:3000'; // o tu backend real
 
 export async function authFetch(url, options = {}) {
-  const token = localStorage.getItem('vault_token');
+  const token = await new Promise((resolve) => {
+    chrome.storage.local.get(['vault_token'], (res) => {
+      resolve(res.vault_token || null);
+    });
+  });
+
   if (!token) return null;
 
   return fetch(API + url, {

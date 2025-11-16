@@ -1,53 +1,186 @@
-import { API, authFetch } from '../api.js';
+export function initView() {
+  console.log('Dashboard view initialized');
 
-let creds = [];
+  // Configurar logout
+  setupLogout();
 
-document.getElementById('logout-btn')?.addEventListener('click', logout);
-document.getElementById('search')?.addEventListener('input', render);
+  // Configurar buscador
+  setupSearch();
 
-async function loadCreds() {
-  const res = await authFetch('/credentials');
+  // Cargar credenciales
+  loadCredentials();
+}
 
-  if (!res) {
-    localStorage.removeItem('vault_token');
-    location.hash = '/login';
+function setupLogout() {
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('vault_token');
+      localStorage.removeItem('vault_user');
+      window.location.hash = '/login';
+    });
+  } else {
+    console.log('Logout button not found, will try to create one');
+    createLogoutButton();
+  }
+}
+
+function createLogoutButton() {
+  // Crear botón de logout si no existe en el template
+  const header = document.querySelector('.dashboard-topbar');
+  if (header && !document.getElementById('logout-btn')) {
+    const logoutBtn = document.createElement('button');
+    logoutBtn.id = 'logout-btn';
+    logoutBtn.textContent = 'Cerrar Sesión';
+    logoutBtn.style.marginLeft = 'auto';
+    logoutBtn.style.padding = '8px 16px';
+    logoutBtn.style.background = '#ef4444';
+    logoutBtn.style.color = 'white';
+    logoutBtn.style.border = 'none';
+    logoutBtn.style.borderRadius = '4px';
+    logoutBtn.style.cursor = 'pointer';
+
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('vault_token');
+      localStorage.removeItem('vault_user');
+      window.location.hash = '/login';
+    });
+
+    header.appendChild(logoutBtn);
+  }
+}
+
+function setupSearch() {
+  const searchInput = document.getElementById('search');
+  if (searchInput) {
+    searchInput.addEventListener('input', renderCredentials);
+  }
+}
+
+async function loadCredentials() {
+  console.log('Loading credentials from background...');
+
+  return new Promise((resolve) => {
+    // Comunicarse con el background script para obtener credenciales
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (response) => {
+        console.log('Credentials response:', response);
+
+        if (response && response.data) {
+          window.creds = response.data;
+          console.log(`Loaded ${response.data.length} credentials`);
+        } else {
+          window.creds = [];
+          console.log('No credentials found or error:', response);
+        }
+
+        renderCredentials();
+        resolve();
+      });
+    } else {
+      console.warn('chrome.runtime not available, using empty credentials');
+      window.creds = [];
+      renderCredentials();
+      resolve();
+    }
+  });
+}
+
+function renderCredentials() {
+  const list = document.getElementById('cred-list');
+  const empty = document.getElementById('empty');
+
+  if (!list || !empty) {
+    console.error('cred-list or empty element not found');
     return;
   }
 
-  creds = await res.json();
-  render();
-}
+  const searchInput = document.getElementById('search');
+  const searchText = searchInput ? searchInput.value.toLowerCase() : '';
+  const credentials = window.creds || [];
 
-function render() {
-  const list = document.getElementById('cred-list');
-  const empty = document.getElementById('empty');
-  const text = document.getElementById('search').value.toLowerCase();
-
-  const filtered = creds.filter(
-    (c) => c.site.toLowerCase().includes(text) || c.username.toLowerCase().includes(text)
+  const filtered = credentials.filter(
+    (cred) =>
+      cred.site.toLowerCase().includes(searchText) ||
+      cred.username.toLowerCase().includes(searchText)
   );
 
   list.innerHTML = '';
 
-  filtered.forEach((c, i) => {
-    const li = document.createElement('li');
-    li.className = 'cred-item';
-    li.style.animationDelay = `${i * 0.05}s`;
+  if (filtered.length === 0) {
+    empty.style.display = 'block';
+    empty.innerHTML =
+      credentials.length === 0
+        ? '<p class="text-center small">No hay credenciales guardadas aún.</p>'
+        : '<p class="text-center small">No se encontraron credenciales que coincidan con la búsqueda.</p>';
+    return;
+  }
 
-    li.innerHTML = `
-      <div class="cred-title">${c.site}</div>
-      <div class="cred-user">${c.username}</div>
+  empty.style.display = 'none';
+
+  filtered.forEach((cred, index) => {
+    const item = document.createElement('li');
+    item.className = 'cred-item';
+    item.style.animationDelay = `${index * 0.05}s`;
+
+    item.innerHTML = `
+      <div class="cred-main">
+        <div class="cred-info">
+          <div class="cred-title">${escapeHtml(cred.site)}</div>
+          <div class="cred-user">${escapeHtml(cred.username)}</div>
+        </div>
+        <div class="cred-actions">
+          <button class="copy-btn" data-username="${escapeHtml(cred.username)}" data-password="${escapeHtml(cred.password)}" title="Copiar contraseña">
+            📋
+          </button>
+          <button class="show-btn" data-password="${escapeHtml(cred.password)}" title="Mostrar contraseña">
+            👁️
+          </button>
+        </div>
+      </div>
     `;
 
-    list.appendChild(li);
+    list.appendChild(item);
   });
 
-  empty.style.display = filtered.length ? 'none' : 'block';
+  // Agregar funcionalidad de copiar
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const password = btn.getAttribute('data-password');
+
+      navigator.clipboard
+        .writeText(password)
+        .then(() => {
+          const originalHTML = btn.innerHTML;
+          btn.innerHTML = '✅';
+          btn.style.background = '#10b981';
+
+          setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.style.background = '';
+          }, 2000);
+        })
+        .catch((err) => {
+          console.error('Error copying to clipboard:', err);
+          alert('Error al copiar al portapapeles');
+        });
+    });
+  });
+
+  // Agregar funcionalidad de mostrar contraseña
+  document.querySelectorAll('.show-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const password = btn.getAttribute('data-password');
+      alert(`Contraseña: ${password}`);
+    });
+  });
 }
 
-function logout() {
-  localStorage.removeItem('vault_token');
-  location.hash = '/login';
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
-
-loadCreds();

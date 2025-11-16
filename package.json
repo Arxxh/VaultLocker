@@ -27,7 +27,7 @@
     "@eslint/js": "^9.39.1",
     "@rollup/plugin-typescript": "^12.3.0",
     "@tailwindcss/postcss": "^4.1.17",
-    "@types/chrome": "^0.1.27",
+    "@types/chrome": "^0.1.29",
     "@types/node": "^20.19.24",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.1",

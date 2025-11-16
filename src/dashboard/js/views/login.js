@@ -1,45 +1,79 @@
-import { API } from '../api.js';
+import { api } from '../../../utils/api';
 
 export function initView() {
-  console.log('LOGIN VIEW CARGADA');
+  console.log('Login view initialized');
 
-  const btn = document.getElementById('login-btn');
-  if (!btn) return;
-
-  btn.addEventListener('click', login);
-
-  document.querySelectorAll('.toggle-password').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.target);
-      input.type = input.type === 'password' ? 'text' : 'password';
-    });
-  });
-}
-
-async function login() {
-  const email = document.getElementById('login-email').value.trim();
-  const password = document.getElementById('login-password').value.trim();
+  const emailInput = document.getElementById('login-email');
+  const passwordInput = document.getElementById('login-password');
+  const loginBtn = document.getElementById('login-btn');
   const errorMsg = document.getElementById('login-error-msg');
+  const togglePassword = document.querySelector('.toggle-password[data-target="login-password"]');
 
-  errorMsg.textContent = '';
-
-  try {
-    const res = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+  // Toggle password visibility
+  if (togglePassword) {
+    togglePassword.addEventListener('click', () => {
+      const targetId = togglePassword.getAttribute('data-target');
+      const passwordField = document.getElementById(targetId);
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        togglePassword.classList.add('visible');
+      } else {
+        passwordField.type = 'password';
+        togglePassword.classList.remove('visible');
+      }
     });
+  }
 
-    if (!res.ok) {
-      errorMsg.textContent = 'Credenciales incorrectas';
+  // Login function
+  async function handleLogin() {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      showError('Por favor completa todos los campos');
       return;
     }
 
-    const data = await res.json();
-    localStorage.setItem('vault_token', data.access_token);
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Iniciando sesión...';
+    errorMsg.textContent = '';
 
-    location.hash = '/dashboard';
-  } catch {
-    errorMsg.textContent = 'Error de conexión';
+    try {
+      const response = await api.login({ email, password });
+
+      // Guardar en localStorage para el dashboard
+      localStorage.setItem('vault_token', response.accessToken);
+      localStorage.setItem('vault_user', JSON.stringify(response.user));
+
+      // Redirigir al dashboard
+      window.location.hash = '/dashboard';
+    } catch (error) {
+      showError(error.message || 'Error al iniciar sesión');
+    } finally {
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Entrar';
+    }
+  }
+
+  function showError(message) {
+    errorMsg.textContent = message;
+    errorMsg.style.color = '#ef4444';
+  }
+
+  // Event listeners
+  if (loginBtn) {
+    loginBtn.addEventListener('click', handleLogin);
+  }
+
+  // Enter key support
+  if (passwordInput) {
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  }
+  if (emailInput) {
+    emailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
   }
 }

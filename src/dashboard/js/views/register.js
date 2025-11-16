@@ -1,43 +1,84 @@
-import { API } from '../api.js';
+import { api } from '../../../utils/api';
 
 export function initView() {
-  console.log('REGISTER VIEW CARGADA');
+  console.log('Register view initialized');
 
-  const btn = document.getElementById('register-btn');
-  if (!btn) return;
+  const emailInput = document.getElementById('reg-email');
+  const passwordInput = document.getElementById('reg-password');
+  const registerBtn = document.getElementById('register-btn');
+  const errorMsg = document.getElementById('register-error-msg');
+  const togglePassword = document.querySelector('.toggle-password[data-target="reg-password"]');
 
-  btn.addEventListener('click', register);
-
-  document.querySelectorAll('.toggle-password').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const input = document.getElementById(btn.dataset.target);
-      input.type = input.type === 'password' ? 'text' : 'password';
+  // Toggle password visibility
+  if (togglePassword) {
+    togglePassword.addEventListener('click', () => {
+      const targetId = togglePassword.getAttribute('data-target');
+      const passwordField = document.getElementById(targetId);
+      if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        togglePassword.classList.add('visible');
+      } else {
+        passwordField.type = 'password';
+        togglePassword.classList.remove('visible');
+      }
     });
-  });
-}
+  }
 
-async function register() {
-  const email = document.getElementById('reg-email').value.trim();
-  const password = document.getElementById('reg-password').value.trim();
-  const err = document.getElementById('register-error-msg');
+  // Register function
+  async function handleRegister() {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
-  err.textContent = '';
-
-  try {
-    const res = await fetch(`${API}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) {
-      err.textContent = 'Error al registrar';
+    if (!email || !password) {
+      showError('Por favor completa todos los campos');
       return;
     }
 
-    alert('Cuenta creada. Inicia sesión.');
-    location.hash = '/login';
-  } catch {
-    err.textContent = 'Error de conexión';
+    if (password.length < 6) {
+      showError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    registerBtn.disabled = true;
+    registerBtn.textContent = 'Creando cuenta...';
+    errorMsg.textContent = '';
+
+    try {
+      const response = await api.register({ email, password });
+
+      // Guardar en localStorage para el dashboard
+      localStorage.setItem('vault_token', response.accessToken);
+      localStorage.setItem('vault_user', JSON.stringify(response.user));
+
+      // Redirigir al dashboard
+      window.location.hash = '/dashboard';
+    } catch (error) {
+      showError(error.message || 'Error al crear la cuenta');
+    } finally {
+      registerBtn.disabled = false;
+      registerBtn.textContent = 'Registrarse';
+    }
+  }
+
+  function showError(message) {
+    errorMsg.textContent = message;
+    errorMsg.style.color = '#ef4444';
+  }
+
+  // Event listeners
+  if (registerBtn) {
+    registerBtn.addEventListener('click', handleRegister);
+  }
+
+  // Enter key support
+  if (passwordInput) {
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleRegister();
+    });
+  }
+  if (emailInput) {
+    emailInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleRegister();
+    });
   }
 }

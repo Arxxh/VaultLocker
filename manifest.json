@@ -3,29 +3,29 @@
   "name": "VaultLocker",
   "version": "1.0.0",
 
-  "action": {
-    "default_popup": "src/popup/index.html"
-  },
+  "permissions": ["storage", "tabs"],
 
   "background": {
-    "service_worker": "src/background/index.ts",
-    "type": "module"
+    "service_worker": "src/background/index.js"
   },
 
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["src/content/content.ts"]
+      "js": ["src/content/content.js"]
     }
   ],
 
   "web_accessible_resources": [
     {
-      "resources": ["src/dashboard/index.html"],
+      "resources": ["src/utils/*", "src/types/*", "src/dashboard/**/*", "assets/*"],
       "matches": ["<all_urls>"]
     }
   ],
 
-  "permissions": ["storage", "activeTab", "scripting", "tabs"],
-  "host_permissions": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"]
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+
+  "options_page": "src/options/index.html"
 }
