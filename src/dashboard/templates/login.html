@@ -1,0 +1,28 @@
+<h2 class="title-center">Iniciar Sesión</h2>
+
+<div class="form-group password-wrapper">
+  <label>Email</label>
+  <input id="login-email" type="email" placeholder="tucorreo@domain.com" />
+</div>
+
+<div class="form-group password-wrapper">
+  <label>Contraseña</label>
+
+  <input type="password" id="login-password" class="input" />
+
+  <button type="button" class="toggle-password" data-target="login-password">
+    <svg class="icon-eye" viewBox="0 0 24 24">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  </button>
+</div>
+
+<button id="login-btn" class="btn-primary">Entrar</button>
+
+<p class="text-center small mt-2">
+  ¿No tienes cuenta?
+  <a href="#/register">Crear cuenta</a>
+</p>
+
+<p id="login-error-msg"></p>

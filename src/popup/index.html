@@ -1,12 +1,33 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VaultLocker</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
-  <body class="bg-gray-900 text-white w-80 h-96">
-    <div id="root"></div>
-    <script type="module" src="./main.tsx"></script>
+
+  <body>
+    <!-- ILUMINACIÓN GLOBAL -->
+    <div class="floating-light"></div>
+
+    <!-- CONTENEDOR RECTANGULAR PRINCIPAL -->
+    <div id="wrap">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="logo">Vault<span>Locker</span></div>
+        <button class="btn-secondary" id="open-panel">Panel →</button>
+      </div>
+
+      <!-- BUSCADOR -->
+      <input type="text" class="search" id="search" placeholder="Buscar…" />
+
+      <!-- LISTA -->
+      <div id="credentials" class="cred-list"></div>
+
+      <!-- BOTÓN FULL PANEL -->
+      <button class="btn-primary" id="open-panel-2">Abrir Panel Completo</button>
+    </div>
+
+    <script src="index.js"></script>
   </body>
 </html>
