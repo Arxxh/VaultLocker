@@ -1,19 +1,5 @@
 import { encryptData, decryptData } from '../utils/crypto';
-
-// Tipado explícito de mensajes
-interface Credential {
-  id: string;
-  encrypted: {
-    iv: number[];
-    ciphertext: number[];
-  };
-}
-
-interface Message {
-  type: 'SAVE_CREDENTIAL' | 'GET_CREDENTIALS' | 'DELETE_CREDENTIAL';
-  data?: { site: string; username: string; password: string };
-  id?: string;
-}
+import type { Credential, Message } from '../types/background';
 
 // Listener global
 chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
@@ -75,6 +61,6 @@ async function getAllCredentials() {
 async function deleteCredential(id: string) {
   const stored = await chrome.storage.local.get('credentials');
   const existing: Credential[] = stored.credentials || [];
-  const filtered = existing.filter((e: Credential) => e.id !== id);
+  const filtered = existing.filter((e) => e.id !== id);
   await chrome.storage.local.set({ credentials: filtered });
 }
