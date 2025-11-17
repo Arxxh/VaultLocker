@@ -43,17 +43,22 @@ export async function saveSession(token, user) {
   }
 }
 
-export async function clearStoredSession(previousUser = null) {
-  const credentialsKey = getCredentialsKey(previousUser);
+export async function clearStoredSession({ previousUser = null, preserveCredentials = true } = {}) {
+  const keysToRemove = [TOKEN_KEY, USER_KEY];
 
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
-  localStorage.removeItem(credentialsKey);
-  localStorage.removeItem('credentials');
+
+  if (!preserveCredentials) {
+    const credentialsKey = getCredentialsKey(previousUser);
+    keysToRemove.push(credentialsKey, 'credentials');
+    localStorage.removeItem(credentialsKey);
+    localStorage.removeItem('credentials');
+  }
 
   if (typeof chrome !== 'undefined' && chrome.storage?.local) {
     await new Promise((resolve) => {
-      chrome.storage.local.remove([TOKEN_KEY, USER_KEY, credentialsKey, 'credentials'], resolve);
+      chrome.storage.local.remove(keysToRemove, resolve);
     });
   }
 }

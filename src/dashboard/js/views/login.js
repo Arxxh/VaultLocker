@@ -50,7 +50,7 @@ export function initView() {
       }
 
       const previousSession = getStoredSession();
-      await clearStoredSession(previousSession.user);
+      await clearStoredSession({ previousUser: previousSession.user, preserveCredentials: true });
 
       await saveSession(accessToken, response.user);
 
