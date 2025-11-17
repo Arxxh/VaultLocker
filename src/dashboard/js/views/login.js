@@ -46,7 +46,7 @@ export function initView() {
       localStorage.setItem('vault_user', JSON.stringify(response.user));
 
       // Redirigir al dashboard
-      window.location.hash = '/dashboard';
+      window.location.hash = '/app';
     } catch (error) {
       showError(error.message || 'Error al iniciar sesión');
     } finally {

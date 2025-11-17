@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>VaultLocker - Dashboard</title>
+    <style>
+      /* ======================================= */
+      /* PROFESSIONAL DASHBOARD STYLES          */
+      /* ======================================= */
+
+      /* Reset para el body del dashboard */
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #0f172a;
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+
+      .professional-dashboard {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        background: #0f172a;
+        color: #e5e7eb;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* Sidebar */
+      .dashboard-sidebar {
+        width: 280px;
+        background: rgba(15, 23, 42, 0.98);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow-y: auto;
+      }
+
+      .sidebar-header {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .sidebar-header .logo {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 0;
+        color: #e5e7eb;
+      }
+
+      .sidebar-header .logo span {
+        background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      /* User Section */
+      .user-section {
+        padding: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .user-avatar {
+        margin-bottom: 12px;
+      }
+
+      .avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.2rem;
+        color: white;
+      }
+
+      .user-name {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 4px;
+        color: #e5e7eb;
+      }
+
+      .user-welcome {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin: 0;
+      }
+
+      /* Navigation */
+      .sidebar-nav {
+        flex: 1;
+        padding: 16px;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        border-radius: 12px;
+        color: #cbd5e1;
+        text-decoration: none;
+        margin-bottom: 8px;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+      }
+
+      .nav-item:hover,
+      .nav-item.active {
+        background: rgba(59, 130, 246, 0.15);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.3);
+      }
+
+      .nav-icon {
+        margin-right: 12px;
+        font-size: 1.1rem;
+      }
+
+      .nav-text {
+        font-weight: 500;
+      }
+
+      /* Sidebar Footer */
+      .sidebar-footer {
+        padding: 16px 24px 24px;
+        margin-top: auto;
+      }
+
+      .logout-btn {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 12px;
+        color: #ef4444;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        font-size: 0.9rem;
+      }
+
+      .logout-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+      }
+
+      .logout-icon {
+        margin-right: 12px;
+      }
+
+      /* Main Content */
+      .dashboard-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background:
+          radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.05), transparent 50%),
+          rgba(15, 23, 42, 0.95);
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .main-header {
+        padding: 24px 32px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-shrink: 0;
+      }
+
+      .header-title h1 {
+        margin: 0 0 8px 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #e5e7eb, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .header-title p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 0.95rem;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 16px;
+      }
+
+      .search-wrapper input {
+        padding: 10px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.07);
+        color: white;
+        outline: none;
+        width: 300px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+
+      .search-wrapper input:focus {
+        border-color: rgba(59, 130, 246, 0.5);
+        background: rgba(255, 255, 255, 0.1);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      }
+
+      .search-wrapper input::placeholder {
+        color: #94a3b8;
+      }
+
+      /* Main Content Area */
+      .main-content {
+        flex: 1;
+        padding: 32px;
+        overflow-y: auto;
+        height: calc(100vh - 140px);
+      }
+
+      /* Dashboard View Styles */
+      .credentials-view {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+        transition: all 0.2s ease;
+      }
+
+      .stat-card:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+      }
+
+      .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 8px;
+      }
+
+      .stat-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .content-section {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 24px;
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .section-title {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0;
+        color: #e5e7eb;
+      }
+
+      .cred-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .cred-item {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .cred-item:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-1px);
+      }
+
+      .cred-main {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .cred-info {
+        flex: 1;
+      }
+
+      .cred-title {
+        font-weight: 600;
+        color: #e5e7eb;
+        margin-bottom: 4px;
+        font-size: 1rem;
+      }
+
+      .cred-user {
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .cred-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .action-btn {
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        color: #3b82f6;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+        border: none;
+      }
+
+      .action-btn:hover {
+        background: rgba(59, 130, 246, 0.3);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #64748b;
+      }
+
+      .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 16px;
+        opacity: 0.5;
+      }
+
+      .empty-state h3 {
+        margin: 0 0 8px 0;
+        color: #94a3b8;
+        font-weight: 600;
+      }
+
+      .empty-state p {
+        margin: 0;
+        font-size: 0.95rem;
+      }
+
+      /* Scrollbar personalizado */
+      .main-content::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .main-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+      }
+
+      .main-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+
+      .main-content::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="professional-dashboard">
+      <!-- Sidebar -->
+      <aside class="dashboard-sidebar">
+        <div class="sidebar-header">
+          <div class="logo">Vault<span>Locker</span></div>
+        </div>
+
+        <div class="user-section">
+          <div class="user-avatar">
+            <div class="avatar-placeholder" id="user-avatar">US</div>
+          </div>
+          <div class="user-info">
+            <div class="user-name" id="user-display-name">Usuario</div>
+            <div class="user-welcome">Bienvenido de vuelta</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="#/app" class="nav-item active">
+            <span class="nav-icon">🔐</span>
+            <span class="nav-text">Credenciales</span>
+          </a>
+          <a href="#/security" class="nav-item">
+            <span class="nav-icon">🛡️</span>
+            <span class="nav-text">Seguridad</span>
+          </a>
+          <a href="#/settings" class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">Configuración</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button id="logout-btn" class="logout-btn">
+            <span class="logout-icon">🚪</span>
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Contenido principal -->
+      <main class="dashboard-main">
+        <header class="main-header">
+          <div class="header-title">
+            <h1>Credenciales</h1>
+            <p>Gestiona todas tus contraseñas guardadas</p>
+          </div>
+          <div class="header-actions">
+            <div class="search-wrapper">
+              <input type="text" id="global-search" placeholder="🔍 Buscar en credenciales..." />
+            </div>
+          </div>
+        </header>
+
+        <div class="main-content">
+          <div class="credentials-view">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-number" id="total-creds">0</div>
+                <div class="stat-label">Total Credenciales</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-number" id="unique-sites">0</div>
+                <div class="stat-label">Sitios Únicos</div>
+              </div>
+            </div>
+
+            <div class="content-section">
+              <div class="section-header">
+                <h2 class="section-title">Tus credenciales guardadas</h2>
+              </div>
+
+              <div class="credentials-list">
+                <ul id="cred-list" class="cred-list"></ul>
+
+                <div id="empty-state" class="empty-state">
+                  <div class="empty-icon">🔒</div>
+                  <h3>No hay credenciales guardadas</h3>
+                  <p>Las credenciales que detectemos automáticamente aparecerán aquí</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      console.log('🚀 Dashboard profesional cargado');
+
+      // Actualizar información del usuario
+      function updateUserInfo() {
+        const userData = localStorage.getItem('vault_user');
+        if (userData) {
+          try {
+            const user = JSON.parse(userData);
+
+            const userNameElement = document.getElementById('user-display-name');
+            if (userNameElement) {
+              userNameElement.textContent = user.email.split('@')[0];
+            }
+
+            const avatarElement = document.getElementById('user-avatar');
+            if (avatarElement) {
+              const initials = user.email.substring(0, 2).toUpperCase();
+              avatarElement.textContent = initials;
+            }
+          } catch (error) {
+            console.error('Error actualizando información del usuario:', error);
+          }
+        }
+      }
+
+      // Configurar logout
+      document.getElementById('logout-btn').addEventListener('click', function () {
+        localStorage.removeItem('vault_token');
+        localStorage.removeItem('vault_user');
+        window.location.hash = '/login';
+      });
+
+      // Cargar y mostrar credenciales
+      function loadCredentials() {
+        chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (response) => {
+          console.log('Credenciales cargadas:', response);
+
+          const list = document.getElementById('cred-list');
+          const emptyState = document.getElementById('empty-state');
+          const totalElement = document.getElementById('total-creds');
+          const uniqueElement = document.getElementById('unique-sites');
+
+          if (!response?.data || response.data.length === 0) {
+            emptyState.style.display = 'block';
+            if (totalElement) totalElement.textContent = '0';
+            if (uniqueElement) uniqueElement.textContent = '0';
+            return;
+          }
+
+          emptyState.style.display = 'none';
+          list.innerHTML = '';
+
+          // Actualizar estadísticas
+          if (totalElement) totalElement.textContent = response.data.length;
+          if (uniqueElement) {
+            const uniqueSites = new Set(response.data.map((c) => c.site)).size;
+            uniqueElement.textContent = uniqueSites;
+          }
+
+          // Mostrar credenciales
+          response.data.forEach((cred, index) => {
+            const item = document.createElement('li');
+            item.className = 'cred-item';
+
+            item.innerHTML = `
+              <div class="cred-main">
+                <div class="cred-info">
+                  <div class="cred-title">${cred.site}</div>
+                  <div class="cred-user">${cred.username}</div>
+                </div>
+                <div class="cred-actions">
+                  <button class="action-btn copy-btn" data-password="${cred.password}">
+                    📋
+                  </button>
+                </div>
+              </div>
+            `;
+
+            list.appendChild(item);
+          });
+
+          // Agregar funcionalidad de copiar
+          document.querySelectorAll('.copy-btn').forEach((btn) => {
+            btn.addEventListener('click', function () {
+              const password = this.getAttribute('data-password');
+              navigator.clipboard.writeText(password).then(() => {
+                const originalText = this.innerHTML;
+                this.innerHTML = '✅';
+                setTimeout(() => {
+                  this.innerHTML = originalText;
+                }, 2000);
+              });
+            });
+          });
+        });
+      }
+
+      // Buscador
+      document.getElementById('global-search').addEventListener('input', function (e) {
+        console.log('Buscando:', e.target.value);
+        // Aquí irá la lógica de búsqueda
+      });
+
+      // Inicializar
+      updateUserInfo();
+      loadCredentials();
+
+      console.log('✅ Dashboard profesional inicializado');
+    </script>
+  </body>
+</html>
