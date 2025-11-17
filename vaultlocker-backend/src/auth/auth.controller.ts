@@ -4,7 +4,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { JwtPayload } from './interface/jwt-payload.interface';
 
 @ApiTags('Auth')
@@ -27,8 +27,8 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Cerrar sesión del usuario autenticado' })
-  logout(@Req() req: Request) {
-    const user = req.user as JwtPayload;
+  logout(@Req() req: Request & { user: JwtPayload }) {
+    const user = req.user;
     return this.authService.logout(user);
   }
 }
