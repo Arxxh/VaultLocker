@@ -1,5 +1,7 @@
 import { api } from '../utils/api';
 
+const hasChrome = typeof chrome !== 'undefined';
+
 let authState = {
   isAuthenticated: false,
   token: null,
@@ -45,24 +47,37 @@ async function syncSession() {
 }
 
 async function getStoredSession() {
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['vault_token', 'vault_user'], (res) => {
-      resolve({
-        token: res.vault_token || localStorage.getItem('vault_token'),
-        user: res.vault_user || tryParse(localStorage.getItem('vault_user')),
+  if (hasChrome && chrome.storage?.local) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['vault_token', 'vault_user'], (res) => {
+        resolve({
+          token: res.vault_token || localStorage.getItem('vault_token'),
+          user: res.vault_user || tryParse(localStorage.getItem('vault_user')),
+        });
       });
     });
-  });
+  }
+
+  return {
+    token: localStorage.getItem('vault_token'),
+    user: tryParse(localStorage.getItem('vault_user')),
+  };
 }
 
 async function clearStoredSession() {
-  return new Promise((resolve) => {
-    chrome.storage.local.remove(['vault_token', 'vault_user'], () => {
-      localStorage.removeItem('vault_token');
-      localStorage.removeItem('vault_user');
-      resolve();
+  if (hasChrome && chrome.storage?.local) {
+    return new Promise((resolve) => {
+      chrome.storage.local.remove(['vault_token', 'vault_user'], () => {
+        localStorage.removeItem('vault_token');
+        localStorage.removeItem('vault_user');
+        resolve();
+      });
     });
-  });
+  }
+
+  localStorage.removeItem('vault_token');
+  localStorage.removeItem('vault_user');
+  return Promise.resolve();
 }
 
 function renderAuthUI() {
@@ -103,6 +118,13 @@ function renderAuthUI() {
 
 async function loadCredentials(searchTerm = '') {
   console.log('📦 Loading credentials...');
+  if (!hasChrome || !chrome.runtime?.sendMessage) {
+    console.warn('⚠️ chrome runtime API no disponible, usando credenciales sincronizadas');
+    localCredentials = authState.syncedCredentials || [];
+    renderCredentials(searchTerm);
+    return;
+  }
+
   return new Promise((resolve) => {
     chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (res) => {
       console.log('📨 Response from background:', res);
@@ -181,18 +203,23 @@ function setupButtons() {
   function openDashboard() {
     console.log('🚀 Opening dashboard...');
 
-    chrome.tabs.create(
-      {
-        url: chrome.runtime.getURL('src/dashboard/index.html'),
-      },
-      function (tab) {
-        if (chrome.runtime.lastError) {
-          console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
-        } else {
-          console.log('✅ Dashboard opened in tab:', tab.id);
+    if (hasChrome && chrome.tabs?.create && chrome.runtime?.getURL) {
+      chrome.tabs.create(
+        {
+          url: chrome.runtime.getURL('src/dashboard/index.html'),
+        },
+        function (tab) {
+          if (chrome.runtime.lastError) {
+            console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
+          } else {
+            console.log('✅ Dashboard opened in tab:', tab.id);
+          }
         }
-      }
-    );
+      );
+      return;
+    }
+
+    window.open('/src/dashboard/index.html', '_blank');
   }
 
   const buttonSelectors = ['#open-panel', '#open-panel-2'];
