@@ -1,3 +1,5 @@
+import { performLogout } from './logout';
+
 console.log('🚀 VaultLocker App loaded!');
 
 class VaultLockerApp {
@@ -188,10 +190,7 @@ class VaultLockerApp {
 
   handleLogout() {
     console.log('🚪 Logging out...');
-    localStorage.removeItem('vault_token');
-    localStorage.removeItem('vault_user');
-    // Redirigir al login del sistema legacy
-    window.location.hash = '/login';
+    performLogout();
   }
 
   showError(message) {
