@@ -10,6 +10,7 @@ let authState = {
 };
 
 let localCredentials = [];
+const resolveUserId = (user) => user?.id || user?._id || user?.uid || user?.email || null;
 
 // Función de inicialización robusta
 async function initializeApp() {
@@ -140,8 +141,10 @@ async function loadCredentials(searchTerm = '') {
     return;
   }
 
+  const userId = resolveUserId(authState.user);
+
   return new Promise((resolve) => {
-    chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (res) => {
+    chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId }, (res) => {
       console.log('📨 Response from background:', res);
 
       const list = document.getElementById('credentials');
