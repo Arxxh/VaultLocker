@@ -50,4 +50,10 @@ export const api = {
       },
     });
   },
+
+  recoverPassword: (payload) =>
+    request('/auth/recover', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };

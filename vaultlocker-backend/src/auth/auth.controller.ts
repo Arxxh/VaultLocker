@@ -6,6 +6,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { Request } from 'express';
 import { JwtPayload } from './interface/jwt-payload.interface';
+import { RecoverPasswordDto } from './dto/recover-password.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -30,5 +31,11 @@ export class AuthController {
   logout(@Req() req: Request & { user: JwtPayload }) {
     const user = req.user;
     return this.authService.logout(user);
+  }
+
+  @Post('recover')
+  @ApiOperation({ summary: 'Recuperar contraseña con PIN maestro y código' })
+  recover(@Body() dto: RecoverPasswordDto) {
+    return this.authService.recoverPassword(dto);
   }
 }

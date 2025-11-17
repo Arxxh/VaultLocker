@@ -23,7 +23,9 @@ async function getPage() {
   console.log('🔄 Routing - token:', !!token, 'hash:', hash);
 
   // Si NO hay token → forzar login (excepto register)
-  if (!token && hash !== 'register') {
+  const unauthenticatedAllowed = ['register', 'recover'];
+
+  if (!token && !unauthenticatedAllowed.includes(hash)) {
     console.log('➡️ Redirecting to login (no token)');
     return 'login.html';
   }
