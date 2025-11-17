@@ -79,6 +79,12 @@ export function initView() {
         throw new Error('No se generó el código de recuperación');
       }
 
+      const accessToken = response.accessToken || response.access_token;
+
+      if (!accessToken) {
+        throw new Error('No se recibió el token de acceso');
+      }
+
       // Guardar en localStorage para el dashboard
       localStorage.setItem('vault_token', accessToken);
       localStorage.setItem('vault_user', JSON.stringify(response.user));
