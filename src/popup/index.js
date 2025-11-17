@@ -1,129 +1,268 @@
-document.addEventListener('DOMContentLoaded', function () {
+import { api } from '../utils/api';
+
+const hasChrome = typeof chrome !== 'undefined';
+
+let authState = {
+  isAuthenticated: false,
+  token: null,
+  user: null,
+  syncedCredentials: [],
+};
+
+let localCredentials = [];
+
+document.addEventListener('DOMContentLoaded', async function () {
   console.log('🎯 POPUP IS RUNNING!!!');
 
-  // Verificar que los elementos existen
-  console.log('🔍 Elementos encontrados:');
-  console.log('- open-panel:', document.getElementById('open-panel'));
-  console.log('- open-panel-2:', document.getElementById('open-panel-2'));
-  console.log('- btn-login:', document.getElementById('btn-login'));
-  console.log('- btn-register:', document.getElementById('btn-register'));
-  console.log('- credentials:', document.getElementById('credentials'));
-
-  // Cargar credenciales
-  loadCredentials();
-
-  // Configurar botones
   setupButtons();
+  setupSearch();
+  await syncSession();
 });
 
-function loadCredentials() {
-  console.log('📦 Loading credentials...');
-  chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (res) => {
-    console.log('📨 Response from background:', res);
+async function syncSession() {
+  console.log('🔄 Syncing session with storage and backend...');
+  const { token, user } = await getStoredSession();
 
-    const list = document.getElementById('credentials');
-    if (!list) {
-      console.log('❌ #credentials element not found');
-      return;
-    }
+  if (!token) {
+    console.log('ℹ️ No stored token found');
+    authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
+    renderAuthUI();
+    return;
+  }
 
-    if (!res?.data || res.data.length === 0) {
-      console.log('ℹ️ No credentials found');
-      list.innerHTML = `<p style="color:#cbd5e1;text-align:center;">No tienes credenciales guardadas aún.</p>`;
-      return;
-    }
+  try {
+    const credentials = await api.fetchCredentials(token);
+    authState = { isAuthenticated: true, token, user, syncedCredentials: credentials ?? [] };
+    console.log('✅ Session validated, credentials synced:', credentials?.length ?? 0);
+  } catch (error) {
+    console.error('❌ Session validation failed:', error);
+    await clearStoredSession();
+    authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
+  }
 
-    console.log(`✅ Found ${res.data.length} credentials`);
-    list.innerHTML = '';
+  renderAuthUI();
+  if (authState.isAuthenticated) {
+    await loadCredentials();
+  }
+}
 
-    res.data.forEach((c, i) => {
-      const item = document.createElement('div');
-      item.className = 'cred-item';
-      item.style.animationDelay = `${i * 0.08}s`;
-
-      item.innerHTML = `
-        <div class="cred-title">${escapeHtml(c.site)}</div>
-        <div class="cred-user">${escapeHtml(c.username)}</div>
-      `;
-
-      list.appendChild(item);
+async function getStoredSession() {
+  if (hasChrome && chrome.storage?.local) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['vault_token', 'vault_user'], (res) => {
+        resolve({
+          token: res.vault_token || localStorage.getItem('vault_token'),
+          user: res.vault_user || tryParse(localStorage.getItem('vault_user')),
+        });
+      });
     });
+  }
+
+  return {
+    token: localStorage.getItem('vault_token'),
+    user: tryParse(localStorage.getItem('vault_user')),
+  };
+}
+
+async function clearStoredSession() {
+  if (hasChrome && chrome.storage?.local) {
+    return new Promise((resolve) => {
+      chrome.storage.local.remove(['vault_token', 'vault_user'], () => {
+        localStorage.removeItem('vault_token');
+        localStorage.removeItem('vault_user');
+        resolve();
+      });
+    });
+  }
+
+  localStorage.removeItem('vault_token');
+  localStorage.removeItem('vault_user');
+  return Promise.resolve();
+}
+
+function renderAuthUI() {
+  const authSection = document.getElementById('auth-section');
+  const searchInput = document.getElementById('search');
+  const panelButtons = document.querySelectorAll('#open-panel, #open-panel-2');
+  const statsCard = document.getElementById('stats-card');
+  const credentialsList = document.getElementById('credentials');
+
+  const isLoggedIn = authState.isAuthenticated;
+
+  if (authSection) {
+    authSection.style.display = isLoggedIn ? 'none' : 'flex';
+  }
+
+  panelButtons.forEach((btn) => {
+    if (btn) {
+      btn.style.display = isLoggedIn ? 'block' : 'none';
+    }
+  });
+
+  if (statsCard) {
+    statsCard.style.display = isLoggedIn ? 'flex' : 'none';
+  }
+
+  if (searchInput) {
+    searchInput.disabled = !isLoggedIn;
+    searchInput.placeholder = isLoggedIn ? 'Buscar…' : 'Inicia sesión para buscar';
+  }
+
+  if (!isLoggedIn && credentialsList) {
+    credentialsList.innerHTML =
+      '<p style="color:#cbd5e1;text-align:center;">Inicia sesión para ver tus credenciales.</p>';
+  }
+
+  updateStats();
+}
+
+async function loadCredentials(searchTerm = '') {
+  console.log('📦 Loading credentials...');
+  if (!hasChrome || !chrome.runtime?.sendMessage) {
+    console.warn('⚠️ chrome runtime API no disponible, usando credenciales sincronizadas');
+    localCredentials = authState.syncedCredentials || [];
+    renderCredentials(searchTerm);
+    return;
+  }
+
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (res) => {
+      console.log('📨 Response from background:', res);
+
+      const list = document.getElementById('credentials');
+      if (!list) {
+        console.log('❌ #credentials element not found');
+        resolve();
+        return;
+      }
+
+      localCredentials = res?.data || [];
+      renderCredentials(searchTerm);
+      resolve();
+    });
+  });
+}
+
+function renderCredentials(searchTerm = '') {
+  const list = document.getElementById('credentials');
+  if (!list) return;
+
+  const normalized = searchTerm.trim().toLowerCase();
+  const filtered = localCredentials.filter((c) => {
+    const site = (c.site || '').toLowerCase();
+    const username = (c.username || '').toLowerCase();
+    return site.includes(normalized) || username.includes(normalized);
+  });
+
+  const baseCount = localCredentials.length || authState.syncedCredentials.length;
+  updateStats(filtered.length ? filtered.length : baseCount);
+
+  if (!filtered.length) {
+    list.innerHTML = `<p style="color:#cbd5e1;text-align:center;">No tienes credenciales guardadas aún.</p>`;
+    return;
+  }
+
+  list.innerHTML = '';
+
+  filtered.forEach((c, i) => {
+    const item = document.createElement('div');
+    item.className = 'cred-item';
+    item.style.animationDelay = `${i * 0.08}s`;
+
+    item.innerHTML = `
+      <div class="cred-title">${escapeHtml(c.site)}</div>
+      <div class="cred-user">${escapeHtml(c.username)}</div>
+    `;
+
+    list.appendChild(item);
+  });
+}
+
+function updateStats(total = null) {
+  const totalElement = document.getElementById('total-credentials');
+  if (!totalElement) return;
+
+  const count =
+    total ??
+    (authState.isAuthenticated ? localCredentials.length || authState.syncedCredentials.length : 0);
+  totalElement.textContent = count.toString();
+}
+
+function setupSearch() {
+  const searchInput = document.getElementById('search');
+  if (!searchInput) return;
+
+  searchInput.addEventListener('input', (e) => {
+    renderCredentials(e.target.value);
   });
 }
 
 function setupButtons() {
   console.log('🔄 Setting up buttons...');
 
-  // Función para abrir dashboard
   function openDashboard() {
     console.log('🚀 Opening dashboard...');
 
-    // Usar chrome.tabs.create para abrir en una nueva pestaña
-    chrome.tabs.create(
-      {
-        url: chrome.runtime.getURL('src/dashboard/index.html'),
-      },
-      function (tab) {
-        if (chrome.runtime.lastError) {
-          console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
-        } else {
-          console.log('✅ Dashboard opened in tab:', tab.id);
+    if (hasChrome && chrome.tabs?.create && chrome.runtime?.getURL) {
+      chrome.tabs.create(
+        {
+          url: chrome.runtime.getURL('src/dashboard/index.html'),
+        },
+        function (tab) {
+          if (chrome.runtime.lastError) {
+            console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
+          } else {
+            console.log('✅ Dashboard opened in tab:', tab.id);
+          }
         }
-      }
-    );
+      );
+      return;
+    }
+
+    window.open('/src/dashboard/index.html', '_blank');
   }
 
-  // Asignar eventos a todos los botones
-  const buttonSelectors = ['#open-panel', '#open-panel-2', '#btn-login', '#btn-register'];
+  const buttonSelectors = ['#open-panel', '#open-panel-2'];
 
   buttonSelectors.forEach((selector) => {
     const button = document.querySelector(selector);
     if (button) {
-      console.log(`✅ Setting up button: ${selector}`);
-
-      // Remover event listeners previos para evitar duplicados
       button.replaceWith(button.cloneNode(true));
       const newButton = document.querySelector(selector);
 
       newButton.addEventListener('click', function (e) {
-        console.log(`🎯 Button clicked: ${selector}`);
         e.preventDefault();
         e.stopPropagation();
         openDashboard();
       });
 
-      // También agregar estilo cursor pointer para indicar que es clickeable
       newButton.style.cursor = 'pointer';
-    } else {
-      console.log(`❌ Button not found: ${selector}`);
     }
   });
 
-  // Verificar todos los botones en la página
-  const allButtons = document.querySelectorAll('button');
-  console.log(`📊 Total buttons in popup: ${allButtons.length}`);
-  allButtons.forEach((btn, index) => {
-    console.log(`Button ${index}:`, {
-      id: btn.id,
-      text: btn.textContent,
-      class: btn.className,
-    });
-  });
+  const loginButton = document.getElementById('btn-login');
+  if (loginButton) {
+    loginButton.addEventListener('click', () => openDashboard());
+  }
+
+  const registerButton = document.getElementById('btn-register');
+  if (registerButton) {
+    registerButton.addEventListener('click', () => openDashboard());
+  }
 }
 
 function escapeHtml(text) {
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = text || '';
   return div.innerHTML;
 }
 
-// También agregar event listeners globales por si acaso
-document.addEventListener('click', function (e) {
-  if (e.target.matches('#open-panel, #open-panel-2, #btn-login, #btn-register')) {
-    console.log('🌎 Global click handler caught:', e.target.id);
-    e.preventDefault();
-    chrome.tabs.create({
-      url: chrome.runtime.getURL('src/dashboard/index.html'),
-    });
+function tryParse(value) {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch (e) {
+    console.warn('Failed to parse stored user', e);
+    return null;
   }
-});
+}
