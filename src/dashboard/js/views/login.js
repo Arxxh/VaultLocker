@@ -1,4 +1,6 @@
 import { api } from '../../../utils/api';
+import { clearStoredSession } from '../logout';
+import { getStoredSession, saveSession } from '../authStorage';
 
 export function initView() {
   console.log('Login view initialized');
@@ -47,13 +49,10 @@ export function initView() {
         throw new Error('No se recibió el token de acceso');
       }
 
-      // Guardar en localStorage para el dashboard
-      localStorage.setItem('vault_token', accessToken);
-      localStorage.setItem('vault_user', JSON.stringify(response.user));
+      const previousSession = getStoredSession();
+      await clearStoredSession({ previousUser: previousSession.user, preserveCredentials: true });
 
-      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-        chrome.storage.local.set({ vault_token: accessToken, vault_user: response.user });
-      }
+      await saveSession(accessToken, response.user);
 
       // Redirigir al dashboard
       window.location.hash = '/app';

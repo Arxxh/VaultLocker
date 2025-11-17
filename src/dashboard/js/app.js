@@ -1,14 +1,13 @@
 import { performLogout } from './logout';
+import { getSessionOrRedirect } from './authStorage';
 
 let cachedCredentials = [];
 let initialized = false;
 
-function updateUserInfo() {
-  const userData = localStorage.getItem('vault_user');
-  if (!userData) return;
+function updateUserInfo(user) {
+  if (!user) return;
 
   try {
-    const user = JSON.parse(userData);
     const userNameElement = document.getElementById('user-display-name');
     if (userNameElement) {
       userNameElement.textContent = user.email.split('@')[0];
@@ -175,7 +174,10 @@ export function bootstrapAppPage() {
   if (initialized) return;
   initialized = true;
 
-  updateUserInfo();
+  const session = getSessionOrRedirect();
+  if (!session) return;
+
+  updateUserInfo(session.user);
   setupLogout();
   setupSearch();
   loadCredentials();
