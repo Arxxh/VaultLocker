@@ -36,4 +36,24 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  logout: async () => {
+    const token = localStorage.getItem('vault_token');
+    if (!token) {
+      return { message: 'No hay sesión activa' };
+    }
+
+    return request('/auth/logout', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
+  recoverPassword: (payload) =>
+    request('/auth/recover', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
 };

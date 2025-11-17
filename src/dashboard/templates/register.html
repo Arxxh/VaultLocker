@@ -18,7 +18,59 @@
   </button>
 </div>
 
+<div class="form-group password-wrapper">
+  <label>PIN maestro (6 dígitos)</label>
+
+  <input type="password" id="reg-master-pin" class="input" maxlength="6" />
+
+  <button type="button" class="toggle-password" data-target="reg-master-pin">
+    <svg class="icon-eye" viewBox="0 0 24 24">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  </button>
+</div>
+
+<div class="form-group password-wrapper">
+  <label>Confirmar PIN maestro</label>
+
+  <input type="password" id="reg-master-pin-confirm" class="input" maxlength="6" />
+
+  <button type="button" class="toggle-password" data-target="reg-master-pin-confirm">
+    <svg class="icon-eye" viewBox="0 0 24 24">
+      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  </button>
+</div>
+
 <button id="register-btn" class="btn-primary">Registrarse</button>
+
+<div id="recovery-kit" class="card" style="display: none;">
+  <h3>Kit de recuperación</h3>
+  <p class="small">Guarda estos datos en un lugar seguro. Los necesitarás para restablecer tu contraseña.</p>
+
+  <div class="credential-item">
+    <div>
+      <p class="label">PIN maestro</p>
+      <p id="recovery-master-pin" class="credential-value"></p>
+    </div>
+    <button id="copy-master-pin" class="btn-secondary" type="button">Copiar</button>
+  </div>
+
+  <div class="credential-item">
+    <div>
+      <p class="label">Código de recuperación</p>
+      <p id="recovery-code" class="credential-value"></p>
+    </div>
+    <button id="copy-recovery-code" class="btn-secondary" type="button">Copiar</button>
+  </div>
+
+  <div class="actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+    <button id="download-recovery" class="btn-primary" type="button">Descargar .txt</button>
+    <button id="go-to-dashboard" class="btn-secondary" type="button">Ir al dashboard</button>
+  </div>
+</div>
 
 <p class="text-center small mt-2">
   ¿Ya tienes cuenta?

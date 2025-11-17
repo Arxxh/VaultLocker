@@ -23,7 +23,9 @@ async function getPage() {
   console.log('🔄 Routing - token:', !!token, 'hash:', hash);
 
   // Si NO hay token → forzar login (excepto register)
-  if (!token && hash !== 'register') {
+  const unauthenticatedAllowed = ['register', 'recover'];
+
+  if (!token && !unauthenticatedAllowed.includes(hash)) {
     console.log('➡️ Redirecting to login (no token)');
     return 'login.html';
   }
@@ -67,6 +69,18 @@ async function loadFullPage(page) {
     document.body.innerHTML = html;
 
     console.log('✅ Full page loaded successfully');
+
+    if (page === 'app.html') {
+      try {
+        const appModuleUrl = chrome.runtime.getURL('src/dashboard/js/app.js');
+        const module = await import(/* @vite-ignore */ appModuleUrl);
+        if (module.bootstrapAppPage) {
+          module.bootstrapAppPage();
+        }
+      } catch (error) {
+        console.error('❌ Error initializing professional dashboard:', error);
+      }
+    }
   } catch (error) {
     console.error('❌ Error loading full page:', error);
     document.body.innerHTML = `

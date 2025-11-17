@@ -1,0 +1,31 @@
+<h2 class="title-center">Recuperar contraseña</h2>
+
+<div class="form-group password-wrapper">
+  <label>Email</label>
+  <input id="recover-email" type="email" placeholder="tucorreo@domain.com" />
+</div>
+
+<div class="form-group password-wrapper">
+  <label>PIN maestro</label>
+  <input type="password" id="recover-master-pin" class="input" maxlength="6" />
+</div>
+
+<div class="form-group password-wrapper">
+  <label>Código de recuperación</label>
+  <input type="text" id="recover-code" class="input" />
+</div>
+
+<div class="form-group password-wrapper">
+  <label>Nueva contraseña</label>
+  <input type="password" id="recover-password" class="input" />
+</div>
+
+<button id="recover-btn" class="btn-primary">Restablecer contraseña</button>
+
+<p class="text-center small mt-2">
+  ¿Recordaste tus datos?
+  <a href="#/login">Volver al login</a>
+</p>
+
+<p id="recover-success-msg" class="small" style="color: #10b981;"></p>
+<p id="recover-error-msg"></p>
