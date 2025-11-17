@@ -61,7 +61,7 @@ export function initView() {
       }
 
       // Redirigir al dashboard
-      window.location.hash = '/dashboard';
+      window.location.hash = '/register';
     } catch (error) {
       showError(error.message || 'Error al crear la cuenta');
     } finally {
