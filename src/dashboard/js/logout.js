@@ -1,13 +1,7 @@
 import { api } from '../../utils/api';
+import { clearStoredSession } from './authStorage';
 
-async function clearStoredSession() {
-  localStorage.removeItem('vault_token');
-  localStorage.removeItem('vault_user');
-
-  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-    chrome.storage.local.remove(['vault_token', 'vault_user']);
-  }
-}
+export { clearStoredSession };
 
 export async function performLogout() {
   try {
