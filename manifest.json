@@ -3,6 +3,10 @@
   "name": "VaultLocker",
   "version": "1.0.0",
 
+  "icons": {
+    "128": "assets/icon128.png"
+  },
+
   "permissions": ["storage", "tabs"],
 
   "background": {
