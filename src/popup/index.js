@@ -1,4 +1,4 @@
-import { api } from '../utils/api';
+import { api } from '../utils/api.js';
 
 const hasChrome = typeof chrome !== 'undefined';
 
@@ -11,38 +11,53 @@ let authState = {
 
 let localCredentials = [];
 
-document.addEventListener('DOMContentLoaded', async function () {
+// Función de inicialización robusta
+async function initializeApp() {
   console.log('🎯 POPUP IS RUNNING!!!');
 
-  setupButtons();
-  setupSearch();
-  await syncSession();
-});
+  try {
+    setupButtons();
+    setupSearch();
+    await syncSession();
+    console.log('✅ App initialized successfully');
+  } catch (error) {
+    console.error('❌ App initialization failed:', error);
+    // Fallback: mostrar UI aunque falle la API
+    renderAuthUI();
+  }
+}
 
 async function syncSession() {
   console.log('🔄 Syncing session with storage and backend...');
-  const { token, user } = await getStoredSession();
-
-  if (!token) {
-    console.log('ℹ️ No stored token found');
-    authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
-    renderAuthUI();
-    return;
-  }
 
   try {
-    const credentials = await api.fetchCredentials(token);
-    authState = { isAuthenticated: true, token, user, syncedCredentials: credentials ?? [] };
-    console.log('✅ Session validated, credentials synced:', credentials?.length ?? 0);
-  } catch (error) {
-    console.error('❌ Session validation failed:', error);
-    await clearStoredSession();
-    authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
-  }
+    const { token, user } = await getStoredSession();
 
-  renderAuthUI();
-  if (authState.isAuthenticated) {
-    await loadCredentials();
+    if (!token) {
+      console.log('ℹ️ No stored token found');
+      authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
+      renderAuthUI();
+      return;
+    }
+
+    try {
+      const credentials = await api.fetchCredentials(token);
+      authState = { isAuthenticated: true, token, user, syncedCredentials: credentials ?? [] };
+      console.log('✅ Session validated, credentials synced:', credentials?.length ?? 0);
+    } catch (error) {
+      console.error('❌ Session validation failed:', error);
+      await clearStoredSession();
+      authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
+    }
+
+    renderAuthUI();
+    if (authState.isAuthenticated) {
+      await loadCredentials();
+    }
+  } catch (error) {
+    console.error('❌ Error in syncSession:', error);
+    authState = { isAuthenticated: false, token: null, user: null, syncedCredentials: [] };
+    renderAuthUI();
   }
 }
 
@@ -212,6 +227,8 @@ function setupButtons() {
       chrome.tabs.create({ url: targetUrl }, function (tab) {
         if (chrome.runtime.lastError) {
           console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
+          // Fallback: abrir en misma pestaña
+          window.location.href = targetUrl;
         } else {
           console.log('✅ Dashboard opened in tab:', tab?.id ?? 'unknown');
         }
@@ -226,32 +243,32 @@ function setupButtons() {
     }
   }
 
-  const buttonSelectors = ['#open-panel', '#open-panel-2'];
+  // Verificación explícita de todos los botones
+  const buttons = [
+    { id: 'open-panel', name: 'Panel Button 1' },
+    { id: 'open-panel-2', name: 'Panel Button 2' },
+    { id: 'btn-login', name: 'Login Button' },
+    { id: 'btn-register', name: 'Register Button' },
+  ];
 
-  buttonSelectors.forEach((selector) => {
-    const button = document.querySelector(selector);
-    if (!button) return;
+  buttons.forEach((buttonInfo) => {
+    const button = document.getElementById(buttonInfo.id);
+    console.log(`🔍 ${buttonInfo.name}:`, button ? 'FOUND' : 'NOT FOUND');
 
-    button.addEventListener('click', function (e) {
-      console.log(`🖱️ Botón ${selector} clicado`);
-      e.preventDefault();
-      e.stopPropagation();
-      openDashboard();
-    });
+    if (button) {
+      button.addEventListener('click', function (e) {
+        console.log(`🎯 ${buttonInfo.name} CLICKED!`);
+        e.preventDefault();
+        e.stopPropagation();
+        openDashboard();
+      });
 
-    button.style.cursor = 'pointer';
-    button.tabIndex = 0;
+      // Asegurar que sea clickeable
+      button.style.cursor = 'pointer';
+      button.style.position = 'relative';
+      button.style.zIndex = '1000';
+    }
   });
-
-  const loginButton = document.getElementById('btn-login');
-  if (loginButton) {
-    loginButton.addEventListener('click', () => openDashboard());
-  }
-
-  const registerButton = document.getElementById('btn-register');
-  if (registerButton) {
-    registerButton.addEventListener('click', () => openDashboard());
-  }
 }
 
 function escapeHtml(text) {
@@ -268,4 +285,11 @@ function tryParse(value) {
     console.warn('Failed to parse stored user', e);
     return null;
   }
+}
+
+// Inicialización mejorada
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+  initializeApp();
 }
