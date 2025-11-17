@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
 
 async function request(path, options) {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -50,6 +50,16 @@ export const api = {
       },
     });
   },
+
+  fetchCredentials: (token) =>
+    request('/credentials', {
+      method: 'GET',
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    }),
 
   recoverPassword: (payload) =>
     request('/auth/recover', {
