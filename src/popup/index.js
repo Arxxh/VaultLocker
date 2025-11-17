@@ -203,41 +203,43 @@ function setupButtons() {
   function openDashboard() {
     console.log('🚀 Opening dashboard...');
 
-    if (hasChrome && chrome.tabs?.create && chrome.runtime?.getURL) {
-      chrome.tabs.create(
-        {
-          url: chrome.runtime.getURL('src/dashboard/index.html'),
-        },
-        function (tab) {
-          if (chrome.runtime.lastError) {
-            console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
-          } else {
-            console.log('✅ Dashboard opened in tab:', tab.id);
-          }
+    const targetUrl = hasChrome && chrome.runtime?.getURL
+      ? chrome.runtime.getURL('src/dashboard/index.html')
+      : new URL('/src/dashboard/index.html', window.location.origin).toString();
+
+    if (hasChrome && chrome.tabs?.create) {
+      chrome.tabs.create({ url: targetUrl }, function (tab) {
+        if (chrome.runtime.lastError) {
+          console.error('❌ Error opening dashboard:', chrome.runtime.lastError);
+        } else {
+          console.log('✅ Dashboard opened in tab:', tab?.id ?? 'unknown');
         }
-      );
+      });
       return;
     }
 
-    window.open('/src/dashboard/index.html', '_blank');
+    const newWindow = window.open(targetUrl, '_blank');
+    if (!newWindow || newWindow.closed) {
+      console.warn('⚠️ window.open bloqueado, navegando en la misma pestaña');
+      window.location.href = targetUrl;
+    }
   }
 
   const buttonSelectors = ['#open-panel', '#open-panel-2'];
 
   buttonSelectors.forEach((selector) => {
     const button = document.querySelector(selector);
-    if (button) {
-      button.replaceWith(button.cloneNode(true));
-      const newButton = document.querySelector(selector);
+    if (!button) return;
 
-      newButton.addEventListener('click', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        openDashboard();
-      });
+    button.addEventListener('click', function (e) {
+      console.log(`🖱️ Botón ${selector} clicado`);
+      e.preventDefault();
+      e.stopPropagation();
+      openDashboard();
+    });
 
-      newButton.style.cursor = 'pointer';
-    }
+    button.style.cursor = 'pointer';
+    button.tabIndex = 0;
   });
 
   const loginButton = document.getElementById('btn-login');
