@@ -96,6 +96,13 @@
         margin: 0;
       }
 
+      .user-email {
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        margin: 6px 0 0 0;
+        word-break: break-all;
+      }
+
       /* Navigation */
       .sidebar-nav {
         flex: 1;
@@ -382,6 +389,36 @@
         font-size: 0.95rem;
       }
 
+      /* Profile section */
+      .profile-section {
+        margin-bottom: 24px;
+      }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+
+      .profile-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: grid;
+        gap: 4px;
+      }
+
+      .profile-label {
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .profile-value {
+        color: #e5e7eb;
+        font-weight: 600;
+      }
+
       /* Scrollbar personalizado */
       .main-content::-webkit-scrollbar {
         width: 6px;
@@ -417,6 +454,7 @@
           <div class="user-info">
             <div class="user-name" id="user-display-name">Usuario</div>
             <div class="user-welcome">Bienvenido de vuelta</div>
+            <div class="user-email" id="user-email"></div>
           </div>
         </div>
 
@@ -467,6 +505,27 @@
               <div class="stat-card">
                 <div class="stat-number" id="unique-sites">0</div>
                 <div class="stat-label">Sitios Únicos</div>
+              </div>
+            </div>
+
+            <div class="content-section profile-section">
+              <div class="section-header">
+                <h2 class="section-title">Configuración de perfil</h2>
+              </div>
+
+              <div class="profile-grid">
+                <div class="profile-card">
+                  <div class="profile-label">Correo</div>
+                  <div class="profile-value" id="profile-email">-</div>
+                </div>
+                <div class="profile-card">
+                  <div class="profile-label">Cuenta creada</div>
+                  <div class="profile-value" id="profile-created">-</div>
+                </div>
+                <div class="profile-card">
+                  <div class="profile-label">Credenciales guardadas</div>
+                  <div class="profile-value" id="profile-credentials">0</div>
+                </div>
               </div>
             </div>
 

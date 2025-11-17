@@ -61,6 +61,26 @@ export const api = {
         : {},
     }),
 
+  deleteCredential: (id, token) =>
+    request(`/credentials/${id}`, {
+      method: 'DELETE',
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    }),
+
+  fetchProfile: (token) =>
+    request('/auth/profile', {
+      method: 'GET',
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+    }),
+
   recoverPassword: (payload) =>
     request('/auth/recover', {
       method: 'POST',
