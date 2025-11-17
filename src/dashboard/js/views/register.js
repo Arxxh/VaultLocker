@@ -201,7 +201,7 @@ export function initView() {
 
   if (goToDashboardBtn) {
     goToDashboardBtn.addEventListener('click', () => {
-      window.location.hash = '/dashboard';
+      window.location.hash = '/app';
     });
   }
 }
