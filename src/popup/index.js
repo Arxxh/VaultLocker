@@ -203,9 +203,10 @@ function setupButtons() {
   function openDashboard() {
     console.log('🚀 Opening dashboard...');
 
-    const targetUrl = hasChrome && chrome.runtime?.getURL
-      ? chrome.runtime.getURL('src/dashboard/index.html')
-      : new URL('/src/dashboard/index.html', window.location.origin).toString();
+    const targetUrl =
+      hasChrome && chrome.runtime?.getURL
+        ? chrome.runtime.getURL('src/dashboard/index.html')
+        : new URL('/src/dashboard/index.html', window.location.origin).toString();
 
     if (hasChrome && chrome.tabs?.create) {
       chrome.tabs.create({ url: targetUrl }, function (tab) {
