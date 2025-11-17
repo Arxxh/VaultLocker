@@ -23,9 +23,14 @@ export class AuthService {
       data: { email: data.email, password: hash },
     });
 
+    const payload = { sub: user.id, email: user.email };
+    const token = await this.jwt.signAsync(payload);
+
     return {
       message: 'Usuario registrado',
       user: { id: user.id, email: user.email },
+      accessToken: token,
+      access_token: token,
     };
   }
 
@@ -41,6 +46,19 @@ export class AuthService {
     const payload = { sub: user.id, email: user.email };
     const token = await this.jwt.signAsync(payload);
 
-    return { access_token: token };
+    return {
+      accessToken: token,
+      access_token: token,
+      user: { id: user.id, email: user.email },
+    };
+  }
+
+  async logout(user?: { sub: number; email: string }) {
+    // No hay estado del lado del servidor para JWT, pero mantenemos el endpoint
+    // para permitir revocación futura y logging centralizado.
+    return {
+      message: 'Sesión cerrada correctamente',
+      user: user ? { id: user.sub, email: user.email } : undefined,
+    };
   }
 }

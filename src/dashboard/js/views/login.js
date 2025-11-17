@@ -41,9 +41,19 @@ export function initView() {
     try {
       const response = await api.login({ email, password });
 
+      const accessToken = response.accessToken || response.access_token;
+
+      if (!accessToken) {
+        throw new Error('No se recibió el token de acceso');
+      }
+
       // Guardar en localStorage para el dashboard
-      localStorage.setItem('vault_token', response.accessToken);
+      localStorage.setItem('vault_token', accessToken);
       localStorage.setItem('vault_user', JSON.stringify(response.user));
+
+      if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+        chrome.storage.local.set({ vault_token: accessToken, vault_user: response.user });
+      }
 
       // Redirigir al dashboard
       window.location.hash = '/app';

@@ -1,3 +1,5 @@
+import { performLogout } from '../logout';
+
 export function initView() {
   console.log('Dashboard view initialized');
 
@@ -15,9 +17,7 @@ function setupLogout() {
   const logoutBtn = document.getElementById('logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('vault_token');
-      localStorage.removeItem('vault_user');
-      window.location.hash = '/login';
+      performLogout();
     });
   } else {
     console.log('Logout button not found, will try to create one');
@@ -41,9 +41,7 @@ function createLogoutButton() {
     logoutBtn.style.cursor = 'pointer';
 
     logoutBtn.addEventListener('click', () => {
-      localStorage.removeItem('vault_token');
-      localStorage.removeItem('vault_user');
-      window.location.hash = '/login';
+      performLogout();
     });
 
     header.appendChild(logoutBtn);
