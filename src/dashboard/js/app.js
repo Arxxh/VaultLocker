@@ -78,6 +78,9 @@ function renderCredentials(searchTerm = '') {
           <button class="action-btn copy-btn" data-password="${escapeHtml(cred.password)}">
             📋
           </button>
+          <button class="action-btn delete-btn" data-id="${escapeHtml(cred.id)}" title="Eliminar">
+            🗑️
+          </button>
         </div>
       </div>
     `;
@@ -101,6 +104,14 @@ function renderCredentials(searchTerm = '') {
       });
     }
 
+    const deleteBtn = item.querySelector('.delete-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', async () => {
+        const credentialId = deleteBtn.getAttribute('data-id') ?? '';
+        await deleteCredential(credentialId);
+      });
+    }
+
     list.appendChild(item);
   });
 }
@@ -117,6 +128,27 @@ async function loadCredentials() {
       cachedCredentials = [];
       renderCredentials(document.getElementById('global-search')?.value ?? '');
       resolve();
+    }
+  });
+}
+
+async function deleteCredential(id) {
+  if (!id) return;
+
+  const confirmDelete = window.confirm('¿Eliminar estas credenciales de VaultLocker?');
+  if (!confirmDelete) return;
+
+  await new Promise((resolve) => {
+    if (typeof chrome !== 'undefined' && chrome.runtime) {
+      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id }, (response) => {
+        if (response?.status === 'ok') {
+          cachedCredentials = cachedCredentials.filter((c) => c.id !== id);
+          renderCredentials(document.getElementById('global-search')?.value ?? '');
+        }
+        resolve(response);
+      });
+    } else {
+      resolve(null);
     }
   });
 }

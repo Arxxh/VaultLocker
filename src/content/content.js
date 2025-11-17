@@ -7,6 +7,8 @@ observer.observe(document.body, { childList: true, subtree: true });
 // Llamada inicial
 detectForms();
 
+const TOAST_ID = 'vaultlocker-toast';
+
 // ==================== FUNCIONES ====================
 
 function detectForms() {
@@ -45,9 +47,52 @@ function onFormSubmit(event) {
 
     console.log(`🔍 Detectado login en ${site}`);
 
-    chrome.runtime.sendMessage({
-      type: 'SAVE_CREDENTIAL',
-      data: { site, username, password },
-    });
+    chrome.runtime.sendMessage(
+      {
+        type: 'SAVE_CREDENTIAL',
+        data: { site, username, password },
+      },
+      (response) => {
+        if (response?.status === 'ok') {
+          showVaultLockerToast(`Credenciales guardadas para ${site}`);
+        } else {
+          showVaultLockerToast('No se pudieron guardar las credenciales', true);
+        }
+      }
+    );
   }
+}
+
+function showVaultLockerToast(message, isError = false) {
+  const existing = document.getElementById(TOAST_ID);
+  if (existing) {
+    existing.remove();
+  }
+
+  const toast = document.createElement('div');
+  toast.id = TOAST_ID;
+  toast.textContent = message;
+
+  toast.style.position = 'fixed';
+  toast.style.bottom = '16px';
+  toast.style.right = '16px';
+  toast.style.zIndex = '2147483647';
+  toast.style.padding = '12px 16px';
+  toast.style.borderRadius = '10px';
+  toast.style.fontSize = '14px';
+  toast.style.fontFamily = 'Inter, system-ui, -apple-system, sans-serif';
+  toast.style.boxShadow = '0 12px 30px rgba(0, 0, 0, 0.25)';
+  toast.style.backdropFilter = 'blur(4px)';
+  toast.style.color = '#0f172a';
+  toast.style.background = isError
+    ? 'linear-gradient(120deg, #fecdd3, #ffe4e6)'
+    : 'linear-gradient(120deg, #c7d2fe, #dbeafe)';
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 300ms ease';
+    setTimeout(() => toast.remove(), 350);
+  }, 2800);
 }
