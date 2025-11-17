@@ -62,7 +62,7 @@ export function initView() {
       }
 
       setTimeout(() => {
-        window.location.hash = '/dashboard';
+        window.location.hash = '/app';
       }, 800);
     } catch (error) {
       showError(error.message || 'No se pudo restablecer la contraseña');

@@ -100,6 +100,11 @@ async function loadPageWithLayout(page) {
   console.log('🏗️ Loading page with layout:', page);
 
   try {
+    // Asegurar contenedor base (se elimina al cargar app.html completo)
+    if (!document.getElementById('root')) {
+      document.body.innerHTML = '<div id="layout-background"></div><div id="root"></div>';
+    }
+
     // Primero cargar el layout
     const layoutUrl = chrome.runtime.getURL('src/dashboard/templates/layout.html');
     const layoutResponse = await fetch(layoutUrl);
