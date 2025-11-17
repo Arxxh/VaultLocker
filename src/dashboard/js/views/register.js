@@ -19,6 +19,7 @@ export function initView() {
 
   let lastGeneratedRecoveryCode = '';
   let lastMasterPin = '';
+  let registrationCompleted = false;
 
   // Toggle password visibility
   document.querySelectorAll('.toggle-password').forEach((toggleButton) => {
@@ -37,6 +38,8 @@ export function initView() {
 
   // Register function
   async function handleRegister() {
+    if (registrationCompleted) return;
+
     const email = emailInput.value.trim();
     const password = passwordInput.value;
     const masterPin = masterPinInput.value.trim();
@@ -93,13 +96,21 @@ export function initView() {
     } catch (error) {
       showError(error.message || 'Error al crear la cuenta');
     } finally {
-      registerBtn.disabled = false;
-      registerBtn.textContent = 'Registrarse';
+      if (!registrationCompleted) {
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'Registrarse';
+      }
     }
   }
 
   function showRecoveryKit(email) {
     if (!recoveryKit) return;
+
+    registrationCompleted = true;
+
+    if (registerBtn) {
+      registerBtn.style.display = 'none';
+    }
 
     recoveryMasterPinLabel.textContent = lastMasterPin;
     recoveryCodeLabel.textContent = lastGeneratedRecoveryCode;
