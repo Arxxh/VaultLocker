@@ -167,6 +167,35 @@ body {
   transform: translateY(-2px);
 }
 
+#auth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stat-card {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
+}
+
+.stat-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #7c3aed;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
 /* ---------------------------- */
 /* SEARCH                      */
 /* ---------------------------- */
@@ -186,6 +215,11 @@ body {
 
 .search::placeholder {
   color: #b4b7c5;
+}
+
+.search:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ---------------------------- */
