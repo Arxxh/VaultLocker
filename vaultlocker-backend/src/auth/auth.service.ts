@@ -6,6 +6,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RecoverPasswordDto } from './dto/recover-password.dto';
 import { randomBytes } from 'crypto';
+import { CurrentUserData } from './interface/current-user.interface';
 
 function generateRecoveryCode() {
   const code = randomBytes(16).toString('hex').toUpperCase();
@@ -106,6 +107,31 @@ export class AuthService {
       access_token: token,
       user: { id: updated.id, email: updated.email },
       recoveryCode: newRecoveryCode,
+    };
+  }
+
+  async getProfile(user: CurrentUserData) {
+    const profile = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: {
+        id: true,
+        email: true,
+        createdAt: true,
+        updatedAt: true,
+        credentials: { select: { id: true } },
+      },
+    });
+
+    if (!profile) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    return {
+      id: profile.id,
+      email: profile.email,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+      credentialsCount: profile.credentials.length,
     };
   }
 

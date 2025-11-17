@@ -1,8 +1,11 @@
 import { performLogout } from './logout';
-import { getSessionOrRedirect } from './authStorage';
+import { getSessionOrRedirect, getStoredSession } from './authStorage';
+import { api } from '../../utils/api';
 
 let cachedCredentials = [];
 let initialized = false;
+let currentSession = null;
+let currentProfile = null;
 
 function updateUserInfo(user) {
   if (!user) return;
@@ -20,6 +23,31 @@ function updateUserInfo(user) {
     }
   } catch (error) {
     console.error('Error actualizando información del usuario:', error);
+  }
+}
+
+function renderProfileDetails() {
+  const email = currentProfile?.email || currentSession?.user?.email;
+
+  if (email) {
+    const userEmail = document.getElementById('user-email');
+    if (userEmail) userEmail.textContent = email;
+
+    const profileEmail = document.getElementById('profile-email');
+    if (profileEmail) profileEmail.textContent = email;
+  }
+
+  const created = currentProfile?.createdAt ? new Date(currentProfile.createdAt) : null;
+  const createdElement = document.getElementById('profile-created');
+  if (createdElement) {
+    createdElement.textContent = created ? created.toLocaleString() : 'Sin fecha disponible';
+  }
+
+  const credentialCount =
+    currentProfile?.credentialsCount ?? cachedCredentials.length ?? currentSession?.user?.credentialsCount;
+  const countElement = document.getElementById('profile-credentials');
+  if (countElement) {
+    countElement.textContent = String(credentialCount || 0);
   }
 }
 
@@ -116,16 +144,36 @@ function renderCredentials(searchTerm = '') {
 }
 
 async function loadCredentials() {
+  const searchValue = document.getElementById('global-search')?.value ?? '';
+  const session = currentSession ?? getStoredSession();
+
+  if (session?.token) {
+    try {
+      const apiCredentials = await api.fetchCredentials(session.token);
+      if (Array.isArray(apiCredentials)) {
+        cachedCredentials = apiCredentials;
+      }
+    } catch (error) {
+      console.error('No se pudieron obtener credenciales desde el backend, usando almacenamiento local', error);
+    }
+  }
+
+  if (!cachedCredentials.length) {
+    await loadFromBackground();
+  }
+
+  renderCredentials(searchValue);
+  renderProfileDetails();
+}
+
+async function loadFromBackground() {
   return new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
       chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (response) => {
         cachedCredentials = response?.data ?? [];
-        renderCredentials(document.getElementById('global-search')?.value ?? '');
         resolve();
       });
     } else {
-      cachedCredentials = [];
-      renderCredentials(document.getElementById('global-search')?.value ?? '');
       resolve();
     }
   });
@@ -137,19 +185,27 @@ async function deleteCredential(id) {
   const confirmDelete = window.confirm('¿Eliminar estas credenciales de VaultLocker?');
   if (!confirmDelete) return;
 
+  const session = currentSession ?? getStoredSession();
+
+  if (session?.token) {
+    try {
+      await api.deleteCredential(id, session.token);
+    } catch (error) {
+      console.error('No se pudo eliminar en el backend:', error);
+    }
+  }
+
   await new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id }, (response) => {
-        if (response?.status === 'ok') {
-          cachedCredentials = cachedCredentials.filter((c) => c.id !== id);
-          renderCredentials(document.getElementById('global-search')?.value ?? '');
-        }
-        resolve(response);
-      });
+      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id }, () => resolve(null));
     } else {
       resolve(null);
     }
   });
+
+  cachedCredentials = cachedCredentials.filter((c) => c.id !== id);
+  renderCredentials(document.getElementById('global-search')?.value ?? '');
+  renderProfileDetails();
 }
 
 function setupSearch() {
@@ -174,15 +230,28 @@ export function bootstrapAppPage() {
   if (initialized) return;
   initialized = true;
 
-  const session = getSessionOrRedirect();
-  if (!session) return;
+  currentSession = getSessionOrRedirect();
+  if (!currentSession) return;
 
-  updateUserInfo(session.user);
+  updateUserInfo(currentSession.user);
+  renderProfileDetails();
+  loadProfile();
   setupLogout();
   setupSearch();
   loadCredentials();
 
   console.log('✅ Dashboard profesional inicializado');
+}
+
+async function loadProfile() {
+  if (!currentSession?.token) return;
+
+  try {
+    currentProfile = await api.fetchProfile(currentSession.token);
+    renderProfileDetails();
+  } catch (error) {
+    console.error('No se pudo cargar el perfil del usuario:', error);
+  }
 }
 
 if (document.readyState === 'loading') {

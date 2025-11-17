@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -7,6 +7,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { Request } from 'express';
 import { JwtPayload } from './interface/jwt-payload.interface';
 import { RecoverPasswordDto } from './dto/recover-password.dto';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { CurrentUserData } from './interface/current-user.interface';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -37,5 +39,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Recuperar contraseña con PIN maestro y código' })
   recover(@Body() dto: RecoverPasswordDto) {
     return this.authService.recoverPassword(dto);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
+  profile(@CurrentUser() user: CurrentUserData) {
+    return this.authService.getProfile(user);
   }
 }
