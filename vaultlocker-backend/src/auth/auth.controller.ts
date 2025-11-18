@@ -8,7 +8,7 @@ import type { Request } from 'express';
 import { JwtPayload } from './interface/jwt-payload.interface';
 import { RecoverPasswordDto } from './dto/recover-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { CurrentUserData } from './interface/current-user.interface';
+import type { CurrentUserData } from './interface/current-user.interface';
 
 @ApiTags('Auth')
 @Controller('auth')
