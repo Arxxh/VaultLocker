@@ -105,8 +105,8 @@ function renderCredentials(searchTerm = '') {
           <button class="action-btn copy-btn" data-password="${escapeHtml(cred.password)}">
             📋
           </button>
-          <button class="action-btn delete-btn" data-id="${escapeHtml(cred.id)}" title="Eliminar">
-            🗑️
+          <button class="action-btn delete-btn" data-id="${escapeHtml(cred.id)}" title="Eliminar credencial">
+            🗑️ Eliminar
           </button>
         </div>
       </div>
@@ -147,19 +147,32 @@ async function loadCredentials() {
   const searchValue = document.getElementById('global-search')?.value ?? '';
   const session = currentSession ?? getStoredSession();
 
+  const backgroundCredentials = await loadFromBackground();
+  if (Array.isArray(backgroundCredentials) && backgroundCredentials.length) {
+    cachedCredentials = backgroundCredentials;
+  }
+
   if (session?.token) {
     try {
       const apiCredentials = await api.fetchCredentials(session.token);
       if (Array.isArray(apiCredentials)) {
-        cachedCredentials = apiCredentials;
+        const merged = new Map();
+
+        backgroundCredentials?.forEach((cred) => {
+          if (cred?.id) merged.set(cred.id, cred);
+        });
+
+        apiCredentials.forEach((cred) => {
+          if (cred?.id) {
+            merged.set(cred.id, cred);
+          }
+        });
+
+        cachedCredentials = Array.from(merged.values());
       }
     } catch (error) {
       console.error('No se pudieron obtener credenciales desde el backend, usando almacenamiento local', error);
     }
-  }
-
-  if (!cachedCredentials.length) {
-    await loadFromBackground();
   }
 
   renderCredentials(searchValue);
@@ -169,12 +182,14 @@ async function loadCredentials() {
 async function loadFromBackground() {
   return new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS' }, (response) => {
-        cachedCredentials = response?.data ?? [];
-        resolve();
+      const activeUserId = currentSession?.user?.id || currentSession?.user?.email || null;
+      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId: activeUserId }, (response) => {
+        const credentials = response?.data ?? [];
+        cachedCredentials = credentials;
+        resolve(credentials);
       });
     } else {
-      resolve();
+      resolve([]);
     }
   });
 }
@@ -197,7 +212,8 @@ async function deleteCredential(id) {
 
   await new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id }, () => resolve(null));
+      const activeUserId = currentSession?.user?.id || currentSession?.user?.email || null;
+      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id, userId: activeUserId }, () => resolve(null));
     } else {
       resolve(null);
     }
