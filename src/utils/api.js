@@ -86,4 +86,15 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  verifyMasterPin: (masterPin, token) =>
+    request('/auth/verify-pin', {
+      method: 'POST',
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`,
+          }
+        : {},
+      body: JSON.stringify({ masterPin }),
+    }),
 };

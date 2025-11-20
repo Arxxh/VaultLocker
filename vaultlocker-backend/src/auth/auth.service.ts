@@ -7,6 +7,7 @@ import { LoginDto } from './dto/login.dto';
 import { RecoverPasswordDto } from './dto/recover-password.dto';
 import { randomBytes } from 'crypto';
 import { CurrentUserData } from './interface/current-user.interface';
+import { VerifyMasterPinDto } from './dto/verify-master-pin.dto';
 
 function generateRecoveryCode() {
   const code = randomBytes(16).toString('hex').toUpperCase();
@@ -142,5 +143,24 @@ export class AuthService {
       message: 'Sesión cerrada correctamente',
       user: user ? { id: user.sub, email: user.email } : undefined,
     };
+  }
+
+  async verifyMasterPin(user: CurrentUserData, dto: VerifyMasterPinDto) {
+    const dbUser = await this.prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { masterPinHash: true, id: true, email: true },
+    });
+
+    if (!dbUser?.masterPinHash) {
+      throw new UnauthorizedException('El usuario no tiene PIN maestro configurado');
+    }
+
+    const isValid = await bcrypt.compare(dto.masterPin, dbUser.masterPinHash);
+
+    if (!isValid) {
+      throw new UnauthorizedException('PIN maestro inválido');
+    }
+
+    return { status: 'ok', valid: true };
   }
 }
