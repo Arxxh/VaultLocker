@@ -1,6 +1,7 @@
 import { performLogout } from './logout';
 import { getSessionOrRedirect, getStoredSession } from './authStorage';
 import { api } from '../../utils/api';
+import { decryptData } from '../../utils/crypto';
 
 let cachedCredentials = [];
 let initialized = false;
@@ -196,18 +197,23 @@ async function loadCredentials() {
 }
 
 async function loadFromBackground() {
-  return new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const activeUserId = resolveActiveUserId();
-      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId: activeUserId }, (response) => {
-        const credentials = response?.data ?? [];
-        cachedCredentials = credentials;
-        resolve(credentials);
+  const activeUserId = resolveActiveUserId();
+
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId: activeUserId }, async (response) => {
+        if (response?.status === 'ok' && Array.isArray(response.data)) {
+          resolve(response.data);
+          return;
+        }
+
+        const localFallback = await fetchLocalVault(activeUserId);
+        resolve(localFallback);
       });
-    } else {
-      resolve([]);
-    }
-  });
+    });
+  }
+
+  return fetchLocalVault(activeUserId);
 }
 
 async function deleteCredential(id) {
@@ -226,14 +232,23 @@ async function deleteCredential(id) {
     }
   }
 
-  await new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const activeUserId = resolveActiveUserId();
-      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id, userId: activeUserId }, () => resolve(null));
-    } else {
-      resolve(null);
-    }
-  });
+  const activeUserId = resolveActiveUserId();
+
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id, userId: activeUserId }, async (response) => {
+        if (response?.status === 'ok') {
+          resolve(null);
+          return;
+        }
+
+        await deleteLocalCredential(activeUserId, id);
+        resolve(null);
+      });
+    });
+  } else {
+    await deleteLocalCredential(activeUserId, id);
+  }
 
   cachedCredentials = cachedCredentials.filter((c) => c.id !== id);
   renderCredentials(document.getElementById('global-search')?.value ?? '');
@@ -284,6 +299,47 @@ async function loadProfile() {
   } catch (error) {
     console.error('No se pudo cargar el perfil del usuario:', error);
   }
+}
+
+async function fetchLocalVault(userId) {
+  if (!userId || typeof chrome === 'undefined' || !chrome.storage?.local) return [];
+
+  const users = await new Promise((resolve) => {
+    chrome.storage.local.get('users', (result) => {
+      resolve(result?.users || {});
+    });
+  });
+
+  const vault = users[userId]?.vault || [];
+  const decrypted = [];
+
+  for (const entry of vault) {
+    try {
+      const plain = await decryptData(entry.encrypted);
+      decrypted.push({ id: entry.id, ...plain });
+    } catch (error) {
+      console.error('No se pudo descifrar la credencial local', error);
+    }
+  }
+
+  return decrypted;
+}
+
+async function deleteLocalCredential(userId, id) {
+  if (!userId || !id || typeof chrome === 'undefined' || !chrome.storage?.local) return;
+
+  const users = await new Promise((resolve) => {
+    chrome.storage.local.get('users', (result) => resolve(result?.users || {}));
+  });
+
+  const vault = users[userId]?.vault || [];
+  const updatedVault = vault.filter((entry) => entry.id !== id);
+
+  const updatedUsers = { ...users, [userId]: { ...(users[userId] || {}), vault: updatedVault } };
+
+  await new Promise((resolve) => {
+    chrome.storage.local.set({ users: updatedUsers }, resolve);
+  });
 }
 
 if (document.readyState === 'loading') {
