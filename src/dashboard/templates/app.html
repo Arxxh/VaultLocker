@@ -437,6 +437,175 @@
       .main-content::-webkit-scrollbar-thumb:hover {
         background: rgba(255, 255, 255, 0.3);
       }
+
+      /* Credential modal */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.65);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-hidden {
+        display: none;
+      }
+
+      .modal-card {
+        width: min(480px, 90vw);
+        background: #0b1220;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        color: #e5e7eb;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .modal-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+
+      .close-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.1rem;
+        cursor: pointer;
+      }
+
+      .modal-subtitle {
+        color: #94a3b8;
+        margin: 0 0 12px;
+        font-size: 0.95rem;
+      }
+
+      .modal-field {
+        margin-bottom: 14px;
+      }
+
+      .modal-label {
+        display: block;
+        color: #94a3b8;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+      }
+
+      .reveal-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px 12px;
+      }
+
+      .masked-value {
+        color: #94a3b8;
+        font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      }
+
+      .visible-value {
+        color: #e2e8f0;
+        font-weight: 600;
+        word-break: break-all;
+        font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
+      }
+
+      .pill-btn {
+        background: rgba(59, 130, 246, 0.18);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        color: #bfdbfe;
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 0.82rem;
+        transition: all 0.15s ease;
+      }
+
+      .pill-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .pill-btn:hover:not(:disabled) {
+        background: rgba(59, 130, 246, 0.3);
+      }
+
+      .pin-input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.06);
+        color: #e5e7eb;
+        outline: none;
+        letter-spacing: 6px;
+        text-align: center;
+        font-size: 1rem;
+      }
+
+      .modal-error {
+        color: #fca5a5;
+        font-size: 0.88rem;
+        margin-top: 6px;
+        min-height: 18px;
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: #e5e7eb;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: linear-gradient(120deg, #3b82f6, #8b5cf6);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 14px;
+        cursor: pointer;
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.35);
+      }
+
+      .btn-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fecdd3;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+
+      .btn-danger:disabled,
+      .btn-primary:disabled,
+      .btn-secondary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
     </style>
   </head>
   <body>
@@ -547,6 +716,54 @@
           </div>
         </div>
       </main>
+    </div>
+
+    <div id="credential-modal" class="modal-overlay modal-hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 class="modal-title" id="modal-site">Detalle de credencial</h3>
+          <button id="close-modal" class="close-btn" title="Cerrar">✕</button>
+        </div>
+        <p class="modal-subtitle">
+          Ingresa tu PIN maestro de 6 dígitos para revelar el correo y la contraseña.
+        </p>
+
+        <div class="modal-field">
+          <span class="modal-label">Correo / usuario</span>
+          <div class="reveal-row">
+            <span id="modal-username" class="masked-value">••••••••</span>
+            <button id="copy-username" class="pill-btn" disabled>Copiar</button>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <span class="modal-label">Contraseña</span>
+          <div class="reveal-row">
+            <span id="modal-password" class="masked-value">••••••••</span>
+            <button id="copy-password" class="pill-btn" disabled>Copiar</button>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <label for="modal-pin" class="modal-label">PIN maestro</label>
+          <input
+            id="modal-pin"
+            class="pin-input"
+            type="password"
+            maxlength="6"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            placeholder="••••••"
+          />
+          <div id="modal-error" class="modal-error"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="modal-delete" class="btn-danger" disabled>Eliminar</button>
+          <button id="modal-cancel" class="btn-secondary">Cancelar</button>
+          <button id="modal-verify" class="btn-primary">Desbloquear</button>
+        </div>
+      </div>
     </div>
 
     <script type="module">
