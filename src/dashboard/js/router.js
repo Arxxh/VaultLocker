@@ -27,11 +27,24 @@ function resolveResourceUrl(path) {
  * UTILIDAD: obtener token desde localStorage
  ****************************************************/
 async function getToken() {
-  return new Promise((resolve) => {
-    const token = localStorage.getItem('vault_token');
-    console.log('🔐 Token from localStorage:', token);
-    resolve(token || null);
-  });
+  const localToken = localStorage.getItem('vault_token');
+
+  if (localToken) {
+    console.log('🔐 Token from localStorage:', localToken);
+    return localToken;
+  }
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['vault_token'], (res) => {
+        const stored = res?.vault_token || null;
+        console.log('🔐 Token from chrome.storage:', stored);
+        resolve(stored);
+      });
+    });
+  }
+
+  return null;
 }
 
 /****************************************************
@@ -44,28 +57,27 @@ async function getPage() {
   console.log('🔄 Routing - token:', !!token, 'hash:', hash);
 
   // Si NO hay token → forzar login (excepto register)
-  const unauthenticatedAllowed = ['register', 'recover'];
+  const unauthenticatedAllowed = ['register', 'recover', 'login'];
 
   if (!token && !unauthenticatedAllowed.includes(hash)) {
     console.log('➡️ Redirecting to login (no token)');
     return 'login.html';
   }
 
-  // Si hay token y no hay hash específico → ir al dashboard profesional
-  if (token && !hash) {
-    console.log('➡️ Authenticated, no hash - going to professional dashboard');
+  if (token) {
+    if (hash !== 'app') {
+      console.log('ℹ️ Forzando navegación al dashboard profesional');
+      location.hash = '/app';
+    }
+
+    console.log('➡️ Authenticated - going to professional dashboard');
     return 'app.html';
   }
 
-  // Si pide app específicamente y está autenticado
-  if (token && hash === 'app') {
-    console.log('➡️ Going to professional dashboard');
-    return 'app.html';
-  }
-
-  // Devolver la vista solicitada
-  console.log('➡️ Using requested page:', hash + '.html');
-  return hash + '.html';
+  // Devolver la vista solicitada para usuarios sin token
+  const targetPage = hash || 'login';
+  console.log('➡️ Using requested page:', `${targetPage}.html`);
+  return `${targetPage}.html`;
 }
 
 /****************************************************
