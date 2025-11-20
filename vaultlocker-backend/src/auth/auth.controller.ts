@@ -9,6 +9,7 @@ import { JwtPayload } from './interface/jwt-payload.interface';
 import { RecoverPasswordDto } from './dto/recover-password.dto';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { CurrentUserData } from './interface/current-user.interface';
+import { VerifyMasterPinDto } from './dto/verify-master-pin.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -46,5 +47,12 @@ export class AuthController {
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
   profile(@CurrentUser() user: CurrentUserData) {
     return this.authService.getProfile(user);
+  }
+
+  @Post('verify-pin')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Validar el PIN maestro de 6 dígitos del usuario' })
+  verifyPin(@CurrentUser() user: CurrentUserData, @Body() dto: VerifyMasterPinDto) {
+    return this.authService.verifyMasterPin(user, dto);
   }
 }

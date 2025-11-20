@@ -1,11 +1,14 @@
 import { performLogout } from './logout';
 import { getSessionOrRedirect, getStoredSession } from './authStorage';
 import { api } from '../../utils/api';
+import { decryptData } from '../../utils/crypto';
 
 let cachedCredentials = [];
 let initialized = false;
 let currentSession = null;
 let currentProfile = null;
+let selectedCredential = null;
+let modalUnlocked = false;
 
 function resolveActiveUserId() {
   const session = currentSession ?? getStoredSession();
@@ -69,6 +72,18 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+function maskValue(value) {
+  if (!value) return '••••••';
+  const trimmed = String(value).trim();
+  if (trimmed.includes('@')) {
+    const [name, domain] = trimmed.split('@');
+    const shortName = name.slice(0, 2) || '••';
+    return `${shortName}***@${domain || '••••'}`;
+  }
+
+  return '••••••';
+}
+
 function renderCredentials(searchTerm = '') {
   const list = document.getElementById('cred-list');
   const emptyState = document.getElementById('empty-state');
@@ -110,11 +125,11 @@ function renderCredentials(searchTerm = '') {
       <div class="cred-main">
         <div class="cred-info">
           <div class="cred-title">${escapeHtml(cred.site)}</div>
-          <div class="cred-user">${escapeHtml(cred.username)}</div>
+          <div class="cred-user">${escapeHtml(maskValue(cred.username))}</div>
         </div>
         <div class="cred-actions">
-          <button class="action-btn copy-btn" data-password="${escapeHtml(cred.password)}">
-            📋
+          <button class="action-btn view-btn" data-id="${escapeHtml(cred.id)}" title="Ver credencial">
+            👁️ Ver
           </button>
           <button class="action-btn delete-btn" data-id="${escapeHtml(cred.id)}" title="Eliminar credencial">
             🗑️ Eliminar
@@ -123,22 +138,10 @@ function renderCredentials(searchTerm = '') {
       </div>
     `;
 
-    const copyBtn = item.querySelector('.copy-btn');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', () => {
-        const password = copyBtn.getAttribute('data-password') ?? '';
-        navigator.clipboard
-          .writeText(password)
-          .then(() => {
-            const originalText = copyBtn.innerHTML;
-            copyBtn.innerHTML = '✅';
-            setTimeout(() => {
-              copyBtn.innerHTML = originalText;
-            }, 2000);
-          })
-          .catch((err) => {
-            console.error('Error copying password:', err);
-          });
+    const viewBtn = item.querySelector('.view-btn');
+    if (viewBtn) {
+      viewBtn.addEventListener('click', () => {
+        openCredentialModal(cred);
       });
     }
 
@@ -152,6 +155,174 @@ function renderCredentials(searchTerm = '') {
 
     list.appendChild(item);
   });
+}
+
+function updateModalFields(unlocked = false) {
+  const usernameEl = document.getElementById('modal-username');
+  const passwordEl = document.getElementById('modal-password');
+  const copyUserBtn = document.getElementById('copy-username');
+  const copyPassBtn = document.getElementById('copy-password');
+  const deleteBtn = document.getElementById('modal-delete');
+  const siteEl = document.getElementById('modal-site');
+
+  if (!selectedCredential) return;
+
+  if (siteEl) siteEl.textContent = selectedCredential.site || 'Detalle de credencial';
+
+  const username = unlocked ? selectedCredential.username || '' : maskValue(selectedCredential.username);
+  const password = unlocked ? selectedCredential.password || '' : '••••••';
+
+  if (usernameEl) {
+    usernameEl.textContent = username || '—';
+    usernameEl.className = unlocked ? 'visible-value' : 'masked-value';
+  }
+
+  if (passwordEl) {
+    passwordEl.textContent = password || '—';
+    passwordEl.className = unlocked ? 'visible-value' : 'masked-value';
+  }
+
+  if (copyUserBtn) {
+    copyUserBtn.disabled = !unlocked;
+    copyUserBtn.dataset.value = unlocked ? username : '';
+  }
+
+  if (copyPassBtn) {
+    copyPassBtn.disabled = !unlocked;
+    copyPassBtn.dataset.value = unlocked ? password : '';
+  }
+
+  if (deleteBtn) {
+    deleteBtn.disabled = !unlocked;
+  }
+}
+
+function openCredentialModal(credential) {
+  selectedCredential = credential;
+  modalUnlocked = false;
+  const modal = document.getElementById('credential-modal');
+  const pinInput = document.getElementById('modal-pin');
+  const errorEl = document.getElementById('modal-error');
+
+  if (!modal) return;
+
+  modal.classList.remove('modal-hidden');
+  if (errorEl) {
+    errorEl.textContent = '';
+    errorEl.style.color = '#fca5a5';
+  }
+  if (pinInput) {
+    pinInput.value = '';
+    pinInput.focus();
+  }
+
+  updateModalFields(false);
+}
+
+function closeCredentialModal() {
+  const modal = document.getElementById('credential-modal');
+  if (modal) modal.classList.add('modal-hidden');
+  selectedCredential = null;
+  modalUnlocked = false;
+}
+
+async function verifyAndRevealCredential() {
+  if (!selectedCredential) return;
+
+  if (modalUnlocked) {
+    updateModalFields(true);
+    return;
+  }
+
+  const pinInput = document.getElementById('modal-pin');
+  const errorEl = document.getElementById('modal-error');
+  const verifyBtn = document.getElementById('modal-verify');
+
+  const masterPin = pinInput?.value.trim() ?? '';
+  if (!/^\d{6}$/.test(masterPin)) {
+    if (errorEl) errorEl.textContent = 'El PIN maestro debe tener 6 dígitos.';
+    return;
+  }
+
+  const session = currentSession ?? getStoredSession();
+  if (!session?.token) {
+    if (errorEl) errorEl.textContent = 'Debes iniciar sesión nuevamente.';
+    return;
+  }
+
+  try {
+    if (verifyBtn) {
+      verifyBtn.disabled = true;
+      verifyBtn.textContent = 'Verificando...';
+    }
+
+    await api.verifyMasterPin(masterPin, session.token);
+    modalUnlocked = true;
+    updateModalFields(true);
+
+    if (errorEl) {
+      errorEl.textContent = 'PIN verificado. Información desbloqueada.';
+      errorEl.style.color = '#34d399';
+    }
+  } catch (error) {
+    if (errorEl) {
+      errorEl.textContent = error.message || 'No se pudo validar el PIN maestro';
+      errorEl.style.color = '#fca5a5';
+    }
+  } finally {
+    if (verifyBtn) {
+      verifyBtn.disabled = false;
+      verifyBtn.textContent = 'Desbloquear';
+    }
+  }
+}
+
+function setupModal() {
+  const closeBtn = document.getElementById('close-modal');
+  const cancelBtn = document.getElementById('modal-cancel');
+  const verifyBtn = document.getElementById('modal-verify');
+  const deleteBtn = document.getElementById('modal-delete');
+  const pinInput = document.getElementById('modal-pin');
+  const copyUserBtn = document.getElementById('copy-username');
+  const copyPassBtn = document.getElementById('copy-password');
+
+  if (closeBtn) closeBtn.addEventListener('click', closeCredentialModal);
+  if (cancelBtn) cancelBtn.addEventListener('click', closeCredentialModal);
+  if (verifyBtn) verifyBtn.addEventListener('click', verifyAndRevealCredential);
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async () => {
+      if (!selectedCredential?.id) return;
+      await deleteCredential(selectedCredential.id);
+      closeCredentialModal();
+    });
+  }
+
+  if (pinInput) {
+    pinInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        verifyAndRevealCredential();
+      }
+    });
+  }
+
+  const handleCopy = (btn) => {
+    btn.addEventListener('click', () => {
+      const value = btn.dataset.value ?? '';
+      navigator.clipboard
+        .writeText(value)
+        .then(() => {
+          const original = btn.textContent;
+          btn.textContent = 'Copiado ✅';
+          setTimeout(() => {
+            btn.textContent = original;
+          }, 1500);
+        })
+        .catch((err) => console.error('No se pudo copiar', err));
+    });
+  };
+
+  if (copyUserBtn) handleCopy(copyUserBtn);
+  if (copyPassBtn) handleCopy(copyPassBtn);
 }
 
 async function loadCredentials() {
@@ -196,18 +367,23 @@ async function loadCredentials() {
 }
 
 async function loadFromBackground() {
-  return new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const activeUserId = resolveActiveUserId();
-      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId: activeUserId }, (response) => {
-        const credentials = response?.data ?? [];
-        cachedCredentials = credentials;
-        resolve(credentials);
+  const activeUserId = resolveActiveUserId();
+
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId: activeUserId }, async (response) => {
+        if (response?.status === 'ok' && Array.isArray(response.data)) {
+          resolve(response.data);
+          return;
+        }
+
+        const localFallback = await fetchLocalVault(activeUserId);
+        resolve(localFallback);
       });
-    } else {
-      resolve([]);
-    }
-  });
+    });
+  }
+
+  return fetchLocalVault(activeUserId);
 }
 
 async function deleteCredential(id) {
@@ -226,14 +402,23 @@ async function deleteCredential(id) {
     }
   }
 
-  await new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const activeUserId = resolveActiveUserId();
-      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id, userId: activeUserId }, () => resolve(null));
-    } else {
-      resolve(null);
-    }
-  });
+  const activeUserId = resolveActiveUserId();
+
+  if (typeof chrome !== 'undefined' && chrome.runtime) {
+    await new Promise((resolve) => {
+      chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id, userId: activeUserId }, async (response) => {
+        if (response?.status === 'ok') {
+          resolve(null);
+          return;
+        }
+
+        await deleteLocalCredential(activeUserId, id);
+        resolve(null);
+      });
+    });
+  } else {
+    await deleteLocalCredential(activeUserId, id);
+  }
 
   cachedCredentials = cachedCredentials.filter((c) => c.id !== id);
   renderCredentials(document.getElementById('global-search')?.value ?? '');
@@ -270,6 +455,7 @@ export function bootstrapAppPage() {
   loadProfile();
   setupLogout();
   setupSearch();
+  setupModal();
   loadCredentials();
 
   console.log('✅ Dashboard profesional inicializado');
@@ -284,6 +470,47 @@ async function loadProfile() {
   } catch (error) {
     console.error('No se pudo cargar el perfil del usuario:', error);
   }
+}
+
+async function fetchLocalVault(userId) {
+  if (!userId || typeof chrome === 'undefined' || !chrome.storage?.local) return [];
+
+  const users = await new Promise((resolve) => {
+    chrome.storage.local.get('users', (result) => {
+      resolve(result?.users || {});
+    });
+  });
+
+  const vault = users[userId]?.vault || [];
+  const decrypted = [];
+
+  for (const entry of vault) {
+    try {
+      const plain = await decryptData(entry.encrypted);
+      decrypted.push({ id: entry.id, ...plain });
+    } catch (error) {
+      console.error('No se pudo descifrar la credencial local', error);
+    }
+  }
+
+  return decrypted;
+}
+
+async function deleteLocalCredential(userId, id) {
+  if (!userId || !id || typeof chrome === 'undefined' || !chrome.storage?.local) return;
+
+  const users = await new Promise((resolve) => {
+    chrome.storage.local.get('users', (result) => resolve(result?.users || {}));
+  });
+
+  const vault = users[userId]?.vault || [];
+  const updatedVault = vault.filter((entry) => entry.id !== id);
+
+  const updatedUsers = { ...users, [userId]: { ...(users[userId] || {}), vault: updatedVault } };
+
+  await new Promise((resolve) => {
+    chrome.storage.local.set({ users: updatedUsers }, resolve);
+  });
 }
 
 if (document.readyState === 'loading') {
