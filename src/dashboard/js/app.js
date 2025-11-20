@@ -162,6 +162,11 @@ async function loadCredentials() {
 
   const session = currentSession ?? getStoredSession();
 
+  const backgroundCredentials = await loadFromBackground();
+  if (Array.isArray(backgroundCredentials) && backgroundCredentials.length) {
+    cachedCredentials = backgroundCredentials;
+  }
+
   if (session?.token) {
     try {
       const apiCredentials = await api.fetchCredentials(session.token);
