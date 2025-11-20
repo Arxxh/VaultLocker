@@ -2,6 +2,27 @@ console.log('🚀 Dashboard router loaded!');
 console.log('Current URL:', window.location.href);
 console.log('Current hash:', window.location.hash);
 
+/**
+ * Obtiene una URL válida tanto dentro del runtime de Chrome como en entornos
+ * de pruebas locales (por ejemplo, sirviendo index.html con Vite).
+ *
+ * Esto previene que la navegación del dashboard falle cuando `chrome` no está
+ * disponible, de modo que la vista /app renderice correctamente en pruebas de
+ * escritorio.
+ *
+ * @param {string} path Ruta relativa al origen del proyecto
+ * @returns {string}
+ */
+function resolveResourceUrl(path) {
+  const normalized = path.startsWith('/') ? path.slice(1) : path;
+
+  if (typeof chrome !== 'undefined' && chrome.runtime?.getURL) {
+    return chrome.runtime.getURL(normalized);
+  }
+
+  return `${window.location.origin}/${normalized}`;
+}
+
 /****************************************************
  * UTILIDAD: obtener token desde localStorage
  ****************************************************/
@@ -54,7 +75,7 @@ async function loadFullPage(page) {
   console.log('📄 Loading full page:', page);
 
   try {
-    const pageUrl = chrome.runtime.getURL(`src/dashboard/templates/${page}`);
+    const pageUrl = resolveResourceUrl(`src/dashboard/templates/${page}`);
     console.log('Page URL:', pageUrl);
 
     const response = await fetch(pageUrl);
@@ -72,7 +93,7 @@ async function loadFullPage(page) {
 
     if (page === 'app.html') {
       try {
-        const appModuleUrl = chrome.runtime.getURL('src/dashboard/js/app.js');
+        const appModuleUrl = resolveResourceUrl('src/dashboard/js/app.js');
         const module = await import(/* @vite-ignore */ appModuleUrl);
         if (module.bootstrapAppPage) {
           module.bootstrapAppPage();
@@ -106,7 +127,7 @@ async function loadPageWithLayout(page) {
     }
 
     // Primero cargar el layout
-    const layoutUrl = chrome.runtime.getURL('src/dashboard/templates/layout.html');
+    const layoutUrl = resolveResourceUrl('src/dashboard/templates/layout.html');
     const layoutResponse = await fetch(layoutUrl);
 
     if (!layoutResponse.ok) {
@@ -118,7 +139,7 @@ async function loadPageWithLayout(page) {
     console.log('✅ Layout loaded');
 
     // Luego cargar la vista específica
-    const viewUrl = chrome.runtime.getURL(`src/dashboard/templates/${page}`);
+    const viewUrl = resolveResourceUrl(`src/dashboard/templates/${page}`);
     const viewResponse = await fetch(viewUrl);
 
     if (!viewResponse.ok) {
@@ -136,7 +157,7 @@ async function loadPageWithLayout(page) {
     // Cargar JS de la vista si existe
     const jsFile = page.replace('.html', '.js');
     const scriptPath = `src/dashboard/js/views/${jsFile}`;
-    const scriptUrl = chrome.runtime.getURL(scriptPath);
+    const scriptUrl = resolveResourceUrl(scriptPath);
 
     try {
       const module = await import(/* @vite-ignore */ scriptUrl);
