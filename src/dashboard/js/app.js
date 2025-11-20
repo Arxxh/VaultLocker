@@ -7,6 +7,16 @@ let initialized = false;
 let currentSession = null;
 let currentProfile = null;
 
+function resolveActiveUserId() {
+  const session = currentSession ?? getStoredSession();
+  const user = session?.user;
+
+  if (!user) return null;
+
+  const candidate = user.id || user._id || user.uid || user.email;
+  return candidate ? String(candidate) : null;
+}
+
 function updateUserInfo(user) {
   if (!user) return;
 
@@ -145,6 +155,11 @@ function renderCredentials(searchTerm = '') {
 
 async function loadCredentials() {
   const searchValue = document.getElementById('global-search')?.value ?? '';
+  const backgroundCredentials = await loadFromBackground();
+  if (Array.isArray(backgroundCredentials) && backgroundCredentials.length) {
+    cachedCredentials = backgroundCredentials;
+  }
+
   const session = currentSession ?? getStoredSession();
 
   const backgroundCredentials = await loadFromBackground();
@@ -182,7 +197,7 @@ async function loadCredentials() {
 async function loadFromBackground() {
   return new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const activeUserId = currentSession?.user?.id || currentSession?.user?.email || null;
+      const activeUserId = resolveActiveUserId();
       chrome.runtime.sendMessage({ type: 'GET_CREDENTIALS', userId: activeUserId }, (response) => {
         const credentials = response?.data ?? [];
         cachedCredentials = credentials;
@@ -212,7 +227,7 @@ async function deleteCredential(id) {
 
   await new Promise((resolve) => {
     if (typeof chrome !== 'undefined' && chrome.runtime) {
-      const activeUserId = currentSession?.user?.id || currentSession?.user?.email || null;
+      const activeUserId = resolveActiveUserId();
       chrome.runtime.sendMessage({ type: 'DELETE_CREDENTIAL', id, userId: activeUserId }, () => resolve(null));
     } else {
       resolve(null);
