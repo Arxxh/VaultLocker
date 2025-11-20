@@ -47,7 +47,8 @@ function renderProfileDetails() {
     if (profileEmail) profileEmail.textContent = email;
   }
 
-  const created = currentProfile?.createdAt ? new Date(currentProfile.createdAt) : null;
+  const createdAt = currentProfile?.createdAt || currentSession?.user?.createdAt;
+  const created = createdAt ? new Date(createdAt) : null;
   const createdElement = document.getElementById('profile-created');
   if (createdElement) {
     createdElement.textContent = created ? created.toLocaleString() : 'Sin fecha disponible';
@@ -154,17 +155,17 @@ function renderCredentials(searchTerm = '') {
 }
 
 async function loadCredentials() {
+  let backgroundCredentials = [];
   const searchValue = document.getElementById('global-search')?.value ?? '';
-  const backgroundCredentials = await loadFromBackground();
-  if (Array.isArray(backgroundCredentials) && backgroundCredentials.length) {
-    cachedCredentials = backgroundCredentials;
-  }
-
   const session = currentSession ?? getStoredSession();
 
-  const backgroundCredentials = await loadFromBackground();
-  if (Array.isArray(backgroundCredentials) && backgroundCredentials.length) {
-    cachedCredentials = backgroundCredentials;
+  try {
+    backgroundCredentials = await loadFromBackground();
+    if (Array.isArray(backgroundCredentials)) {
+      cachedCredentials = backgroundCredentials;
+    }
+  } catch (error) {
+    console.error('No se pudieron obtener credenciales desde el background:', error);
   }
 
   if (session?.token) {
