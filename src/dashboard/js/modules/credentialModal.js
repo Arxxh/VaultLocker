@@ -1,6 +1,11 @@
-import { api } from '../../utils/api';
+import { api } from '../../../utils/api';
 import { getSession } from './session';
-import { getSelectedCredential, resetModalState, setModalUnlocked, setSelectedCredential } from './state';
+import {
+  getSelectedCredential,
+  resetModalState,
+  setModalUnlocked,
+  setSelectedCredential,
+} from './state';
 import { renderMaskedModalFields, renderVisibleModalFields } from './credentialList';
 
 const updateCopyButtons = (credential, unlocked) => {

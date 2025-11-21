@@ -1,5 +1,5 @@
-import { api } from '../../utils/api';
-import { decryptData } from '../../utils/crypto';
+import { api } from '../../../utils/api';
+import { decryptData } from '../../../utils/crypto';
 import { renderCredentials, syncProfileStats } from './credentialList';
 import { renderProfileDetails } from './profile';
 import { getSession, resolveActiveUserId } from './session';
