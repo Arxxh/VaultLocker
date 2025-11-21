@@ -5,6 +5,8 @@ import { renderProfileDetails } from './profile';
 import { getSession, resolveActiveUserId } from './session';
 import { getCachedCredentials, setCachedCredentials } from './state';
 
+let isWatchingStorage = false;
+
 const fetchLocalVault = async (userId) => {
   if (!userId) return [];
 
@@ -102,6 +104,23 @@ export const loadCredentials = async () => {
 
   renderCredentials(searchValue);
   renderProfileDetails();
+};
+
+export const initCredentialSync = () => {
+  if (isWatchingStorage || typeof chrome === 'undefined' || !chrome.storage?.onChanged) {
+    return;
+  }
+
+  isWatchingStorage = true;
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+
+    const hasUserChange = Boolean(changes.users || changes.vault_user);
+    if (hasUserChange) {
+      loadCredentials();
+    }
+  });
 };
 
 export const deleteCredential = async (id) => {

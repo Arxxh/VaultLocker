@@ -1,6 +1,6 @@
 import { performLogout } from './logout';
 import { initDebugTools } from './modules/debug';
-import { deleteCredential, loadCredentials } from './modules/credentialService';
+import { deleteCredential, initCredentialSync, loadCredentials } from './modules/credentialService';
 import { setupModal } from './modules/credentialModal';
 import { renderProfileDetails, updateUserInfo } from './modules/profile';
 import { bootstrapSession, loadProfile } from './modules/session';
@@ -26,6 +26,7 @@ const bootstrapDashboard = async () => {
   setupModal(deleteCredential);
   setupSearch();
   initDebugTools();
+  initCredentialSync();
 
   await loadProfile();
   renderProfileDetails();
