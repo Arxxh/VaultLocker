@@ -32,6 +32,32 @@ export function getStoredSession() {
   };
 }
 
+/**
+ * Sincroniza la sesión almacenada en chrome.storage.local hacia localStorage
+ * para que el dashboard pueda leerla incluso cuando se abrió fuera del popup.
+ */
+export async function hydrateSessionFromExtensionStorage() {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+
+  const hasLocalToken = Boolean(localStorage.getItem(TOKEN_KEY));
+  const hasLocalUser = Boolean(localStorage.getItem(USER_KEY));
+
+  if (hasLocalToken && hasLocalUser) return;
+
+  const { [TOKEN_KEY]: storedToken, [USER_KEY]: storedUser } = await new Promise((resolve) => {
+    chrome.storage.local.get([TOKEN_KEY, USER_KEY], resolve);
+  });
+
+  if (storedToken && !hasLocalToken) {
+    localStorage.setItem(TOKEN_KEY, storedToken);
+  }
+
+  if (storedUser && !hasLocalUser) {
+    const serializedUser = typeof storedUser === 'string' ? storedUser : JSON.stringify(storedUser);
+    localStorage.setItem(USER_KEY, serializedUser);
+  }
+}
+
 export async function saveSession(token, user) {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));

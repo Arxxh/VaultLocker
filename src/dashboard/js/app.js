@@ -1,5 +1,5 @@
 import { performLogout } from './logout';
-import { getSessionOrRedirect, getStoredSession } from './authStorage';
+import { getSessionOrRedirect, getStoredSession, hydrateSessionFromExtensionStorage } from './authStorage';
 import { api } from '../../utils/api';
 import { decryptData } from '../../utils/crypto';
 
@@ -443,9 +443,11 @@ function setupLogout() {
   });
 }
 
-export function bootstrapAppPage() {
+export async function bootstrapAppPage() {
   if (initialized) return;
   initialized = true;
+
+  await hydrateSessionFromExtensionStorage();
 
   currentSession = getSessionOrRedirect();
   if (!currentSession) return;

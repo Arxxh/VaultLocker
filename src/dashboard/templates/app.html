@@ -775,7 +775,9 @@
           : '../js/authStorage.js';
 
       import(/* @vite-ignore */ authStorageUrl)
-        .then(({ getSessionOrRedirect }) => {
+        .then(async ({ getSessionOrRedirect, hydrateSessionFromExtensionStorage }) => {
+          await hydrateSessionFromExtensionStorage();
+
           const session = getSessionOrRedirect();
           if (!session) return;
 

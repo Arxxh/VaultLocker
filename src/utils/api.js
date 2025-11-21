@@ -1,4 +1,10 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
+// `import.meta.env` solo está disponible cuando el bundle pasa por Vite.
+// En tiempo de ejecución dentro de la extensión (archivos sin compilar),
+// `import.meta.env` es `undefined` y acceder a una propiedad provocaba un
+// TypeError, evitando que las credenciales se cargaran desde el backend.
+const apiUrlFromEnv = typeof import.meta !== 'undefined' ? import.meta?.env?.VITE_API_URL : undefined;
+
+export const API_BASE_URL = apiUrlFromEnv ?? 'http://localhost:3000';
 
 async function request(path, options) {
   const res = await fetch(`${API_BASE_URL}${path}`, {
