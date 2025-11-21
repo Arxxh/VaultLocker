@@ -108,7 +108,7 @@ async function loadFullPage(page) {
         const appModuleUrl = resolveResourceUrl('src/dashboard/js/app.js');
         const module = await import(/* @vite-ignore */ appModuleUrl);
         if (module.bootstrapAppPage) {
-          module.bootstrapAppPage();
+          await module.bootstrapAppPage();
         }
       } catch (error) {
         console.error('❌ Error initializing professional dashboard:', error);

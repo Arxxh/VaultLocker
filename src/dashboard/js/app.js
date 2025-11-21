@@ -1,7 +1,7 @@
-import { performLogout } from './logout.js';
-import { getSessionOrRedirect, getStoredSession } from './authStorage.js';
-import { api } from '../../utils/api.js';
-import { decryptData } from '../../utils/crypto.js';
+import { performLogout } from './logout';
+import { getSessionOrRedirect, getStoredSession, hydrateSessionFromExtensionStorage } from './authStorage';
+import { api } from '../../utils/api';
+import { decryptData } from '../../utils/crypto';
 
 let cachedCredentials = [];
 let initialized = false;
@@ -758,6 +758,16 @@ function setupLogout() {
     console.log('🚪 Cerrando sesión...');
     performLogout();
   });
+}
+
+export async function bootstrapAppPage() {
+  if (initialized) return;
+  initialized = true;
+
+  await hydrateSessionFromExtensionStorage();
+
+  currentSession = getSessionOrRedirect();
+  if (!currentSession) return;
 
   console.log('✅ Logout configurado');
 }
