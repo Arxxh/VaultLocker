@@ -7,6 +7,27 @@ import { getCachedCredentials, setCachedCredentials } from './state';
 
 let isWatchingStorage = false;
 
+const getCredentialsKey = (userId) => (userId ? `credentials_${userId}` : 'credentials');
+
+const decryptVaultEntries = async (entries = []) => {
+  const decrypted = [];
+
+  for (const entry of entries) {
+    if (!entry?.id || !entry?.encrypted) continue;
+
+    const base = { id: entry.id, site: entry.site, username: entry.username };
+
+    try {
+      const plain = await decryptData(entry.encrypted);
+      decrypted.push({ ...base, ...plain });
+    } catch (error) {
+      decrypted.push(base);
+    }
+  }
+
+  return decrypted;
+};
+
 const fetchLocalVault = async (userId) => {
   if (!userId) return [];
 
@@ -14,25 +35,12 @@ const fetchLocalVault = async (userId) => {
     return [];
   }
 
-  const users = await new Promise((resolve) => {
-    chrome.storage.local.get('users', (result) => resolve(result?.users || {}));
+  const key = getCredentialsKey(userId);
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get([key], (result) => resolve(result?.[key] || []));
   });
 
-  const vault = users[userId]?.vault || [];
-  const decrypted = [];
-
-  for (const entry of vault) {
-    try {
-      const plain = entry.encrypted ? await decryptData(entry.encrypted) : entry;
-      decrypted.push({ id: entry.id, ...plain });
-    } catch (error) {
-      if (entry.site || entry.username) {
-        decrypted.push(entry);
-      }
-    }
-  }
-
-  return decrypted;
+  return decryptVaultEntries(stored);
 };
 
 const loadFromBackground = async () => {
@@ -59,7 +67,7 @@ const loadFromBackground = async () => {
   try {
     const response = await messagePromise;
     if (response?.status === 'ok' && Array.isArray(response.data)) {
-      return response.data;
+      return decryptVaultEntries(response.data);
     }
   } catch (error) {
     // fallback handled below
@@ -116,8 +124,14 @@ export const initCredentialSync = () => {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
 
-    const hasUserChange = Boolean(changes.users || changes.vault_user);
-    if (hasUserChange) {
+    const activeUserId = resolveActiveUserId();
+    const watchedKey = getCredentialsKey(activeUserId);
+
+    const hasRelevantChange = Object.keys(changes).some(
+      (key) => key === 'vault_user' || key === watchedKey || key.startsWith('credentials_')
+    );
+
+    if (hasRelevantChange) {
       loadCredentials();
     }
   });
@@ -168,15 +182,14 @@ export const deleteCredential = async (id) => {
 const deleteLocalCredential = async (userId, id) => {
   if (!userId || !id || typeof chrome === 'undefined' || !chrome.storage?.local) return;
 
-  const users = await new Promise((resolve) => {
-    chrome.storage.local.get('users', (result) => resolve(result?.users || {}));
+  const key = getCredentialsKey(userId);
+  const vault = await new Promise((resolve) => {
+    chrome.storage.local.get([key], (result) => resolve(result?.[key] || []));
   });
 
-  const vault = users[userId]?.vault || [];
   const updatedVault = vault.filter((entry) => entry.id !== id);
-  const updatedUsers = { ...users, [userId]: { ...(users[userId] || {}), vault: updatedVault } };
 
   await new Promise((resolve) => {
-    chrome.storage.local.set({ users: updatedUsers }, resolve);
+    chrome.storage.local.set({ [key]: updatedVault }, resolve);
   });
 };

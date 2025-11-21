@@ -20,15 +20,9 @@ import { encryptData, decryptData } from '../utils/crypto.js';
 /**
  * @typedef {Object} Credential
  * @property {string} id
- * @property {EncryptedPayload} encrypted
- */
-
-/**
- * @typedef {Object} DecryptedCredential
- * @property {string} id
  * @property {string} site
  * @property {string} username
- * @property {string} password
+ * @property {EncryptedPayload} encrypted
  */
 
 // Listener global
@@ -70,18 +64,23 @@ async function saveCredential(userId, data) {
     throw new Error('No hay un usuario activo para guardar credenciales');
   }
 
-  const encrypted = await encryptData(data);
+  const encrypted = await encryptData({ password: data.password });
   const id = crypto.randomUUID();
 
-  const users = await getUsersStorage();
-  const vault = users[userId]?.vault || [];
+  const key = getCredentialsKey(userId);
+  const existing = await getStoredCredentials(key);
 
-  const updatedUsers = {
-    ...users,
-    [userId]: { ...(users[userId] || {}), vault: [...vault, { id, encrypted }] },
-  };
+  const updatedVault = [
+    ...existing,
+    {
+      id,
+      site: data.site,
+      username: data.username,
+      encrypted,
+    },
+  ];
 
-  await chrome.storage.local.set({ users: updatedUsers });
+  await chrome.storage.local.set({ [key]: updatedVault });
   console.log(`Credencial guardada para ${data.site}`);
 }
 
@@ -91,23 +90,14 @@ async function getAllCredentials(userId) {
     return [];
   }
 
-  const users = await getUsersStorage();
-  /** @type {Credential[]} */
-  const existing = users[userId]?.vault || [];
+  const key = getCredentialsKey(userId);
+  const existing = await getStoredCredentials(key);
 
-  /** @type {DecryptedCredential[]} */
-  const decrypted = [];
-
-  for (const entry of existing) {
-    try {
-      const plain = await decryptData(entry.encrypted);
-      decrypted.push({ id: entry.id, ...plain });
-    } catch (e) {
-      console.error('Fallo al descifrar', e);
-    }
+  if (existing.length === 0) {
+    return await readLegacyVault(userId);
   }
 
-  return decrypted;
+  return existing;
 }
 
 /**
@@ -118,18 +108,12 @@ async function deleteCredential(userId, id) {
     throw new Error('No hay un usuario activo para eliminar credenciales');
   }
 
-  const users = await getUsersStorage();
-  /** @type {Credential[]} */
-  const existing = users[userId]?.vault || [];
+  const key = getCredentialsKey(userId);
+  const existing = await getStoredCredentials(key);
 
   const filtered = existing.filter((e) => e.id !== id);
 
-  const updatedUsers = {
-    ...users,
-    [userId]: { ...(users[userId] || {}), vault: filtered },
-  };
-
-  await chrome.storage.local.set({ users: updatedUsers });
+  await chrome.storage.local.set({ [key]: filtered });
 }
 
 /**
@@ -148,17 +132,6 @@ async function resolveActiveUserId(userId) {
   return resolved;
 }
 
-async function getUsersStorage() {
-  const stored = await chrome.storage.local.get('users');
-  const users = stored.users || {};
-
-  if (typeof users !== 'object') {
-    return {};
-  }
-
-  return users;
-}
-
 /**
  * @param {any} user
  */
@@ -167,4 +140,51 @@ function normalizeUserId(user) {
   const candidate = user.id || user._id || user.uid || user.email;
   if (!candidate) return null;
   return String(candidate);
+}
+
+function getCredentialsKey(userId) {
+  return userId ? `credentials_${userId}` : 'credentials';
+}
+
+async function getStoredCredentials(key) {
+  const stored = await chrome.storage.local.get([key]);
+  const credentials = stored?.[key];
+
+  if (!Array.isArray(credentials)) {
+    return [];
+  }
+
+  return credentials;
+}
+
+async function readLegacyVault(userId) {
+  const legacy = await chrome.storage.local.get('users');
+  const vault = legacy?.users?.[userId]?.vault || [];
+
+  if (!Array.isArray(vault)) return [];
+
+  const normalized = [];
+
+  for (const entry of vault) {
+    const base = {
+      id: entry.id,
+      site: entry.site,
+      username: entry.username,
+      encrypted: entry.encrypted,
+    };
+
+    if ((!base.site || !base.username) && entry?.encrypted) {
+      try {
+        const plain = await decryptData(entry.encrypted);
+        base.site = base.site || plain.site;
+        base.username = base.username || plain.username;
+      } catch (error) {
+        console.error('No se pudo migrar metadatos legados', error);
+      }
+    }
+
+    normalized.push(base);
+  }
+
+  return normalized;
 }
