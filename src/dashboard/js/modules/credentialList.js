@@ -41,11 +41,13 @@ export const renderCredentials = (searchTerm = '') => {
   }
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
+  console.log('[renderCredentials] total:', credentials.length, 'search:', normalizedSearch);
   const filtered = credentials.filter((cred) => {
     const site = (cred.site || '').toLowerCase();
     const username = (cred.username || '').toLowerCase();
     return site.includes(normalizedSearch) || username.includes(normalizedSearch);
   });
+  console.log('[renderCredentials] filtered:', filtered.length);
 
   updateStats(credentials);
   list.innerHTML = '';
@@ -57,25 +59,42 @@ export const renderCredentials = (searchTerm = '') => {
 
   emptyState.style.display = 'none';
 
+  let rendered = 0;
   filtered.forEach((cred) => {
-    const item = document.createElement('li');
-    item.className = 'cred-item';
-    item.innerHTML = `
-      <div class="cred-main">
-        <div class="cred-info">
-          <div class="cred-title">${escapeHtml(cred.site)}</div>
-          <div class="cred-user">${escapeHtml(cred.username)}</div>
+    try {
+      const item = document.createElement('li');
+      item.className = 'cred-item';
+      item.innerHTML = `
+        <div class="cred-main">
+          <div class="cred-info">
+            <div class="cred-title">${escapeHtml(cred.site)}</div>
+            <div class="cred-user">${escapeHtml(cred.username)}</div>
+          </div>
         </div>
-      </div>
-    `;
+      `;
 
-    item.style.cursor = 'pointer';
-    item.addEventListener('click', () => {
-      openCredentialModal(cred);
-    });
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', () => {
+        openCredentialModal(cred);
+      });
 
-    list.appendChild(item);
+      list.appendChild(item);
+      rendered += 1;
+    } catch (error) {
+      console.error('No se pudo renderizar una credencial', error, cred);
+    }
   });
+
+  // Fallback simple si nada se pintó.
+  if (rendered === 0 && filtered.length > 0) {
+    console.warn('[renderCredentials] Sin elementos renderizados, usando fallback');
+    filtered.forEach((cred) => {
+      const li = document.createElement('li');
+      li.textContent = `${cred.site} — ${cred.username}`;
+      li.style.padding = '8px';
+      list.appendChild(li);
+    });
+  }
 };
 
 export const setupSearch = () => {

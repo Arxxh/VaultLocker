@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <title>VaultLocker Dashboard</title>
     <link rel="stylesheet" href="./style.css" />
+    <script>
+      // Previene colisiones con el preámbulo de Vite/React DevTools cuando se inyecta más de una vez.
+      if (typeof self !== 'undefined') {
+        self.__vite_plugin_react_preamble_installed__ = true;
+        self.injectIntoGlobalHook = self.injectIntoGlobalHook || function () {};
+      }
+    </script>
   </head>
 
   <body>

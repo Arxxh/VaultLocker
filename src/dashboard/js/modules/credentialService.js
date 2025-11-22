@@ -95,6 +95,7 @@ export const loadCredentials = async () => {
   try {
     backgroundCredentials = await loadFromBackground();
     setCachedCredentials(backgroundCredentials);
+    console.log('[credentialService] background creds:', backgroundCredentials.length);
   } catch (error) {
     console.error('No se pudieron leer credenciales desde background:', error);
   }
@@ -104,6 +105,7 @@ export const loadCredentials = async () => {
       const apiCredentials = await api.fetchCredentials(session.token);
       if (Array.isArray(apiCredentials) && apiCredentials.length > 0) {
         setCachedCredentials(mergeCredentialSources(backgroundCredentials, apiCredentials));
+        console.log('[credentialService] api creds:', apiCredentials.length);
       }
     } catch (error) {
       console.error('No se pudieron leer credenciales desde API:', error);

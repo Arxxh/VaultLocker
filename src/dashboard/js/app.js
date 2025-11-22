@@ -4,7 +4,7 @@ import { deleteCredential, initCredentialSync, loadCredentials } from './modules
 import { setupModal } from './modules/credentialModal';
 import { renderProfileDetails, updateUserInfo } from './modules/profile';
 import { bootstrapSession, loadProfile } from './modules/session';
-import { setupSearch } from './modules/credentialList';
+import { setupSearch, renderCredentials } from './modules/credentialList';
 import { isInitialized, markInitialized } from './modules/state';
 
 const setupLogout = () => {
@@ -30,7 +30,16 @@ const bootstrapDashboard = async () => {
 
   await loadProfile();
   renderProfileDetails();
-  await loadCredentials();
+
+  // Asegura que el listado se pinte incluso si algo falla en la carga.
+  try {
+    await loadCredentials();
+  } catch (error) {
+    console.error('No se pudieron cargar credenciales en app view:', error);
+  }
+
+  // Refresco final del listado con la caché actual.
+  renderCredentials();
 };
 
 export const initializeCredentialsView = () => {
