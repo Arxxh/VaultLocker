@@ -1,13 +1,13 @@
 console.log('VaultLocker content script activo en:', window.location.hostname);
 
-// Observador para detectar formularios dinámicos
+const TOAST_ID = 'vaultlocker-toast';
+
+// Observador para detectar formularios dinámicos y enganchar el submit
 const observer = new MutationObserver(() => detectForms());
 observer.observe(document.body, { childList: true, subtree: true });
 
 // Llamada inicial
 detectForms();
-
-const TOAST_ID = 'vaultlocker-toast';
 
 // ==================== FUNCIONES ====================
 
@@ -53,6 +53,12 @@ function onFormSubmit(event) {
         data: { site, username, password },
       },
       (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn('SAVE_CREDENTIAL lastError', chrome.runtime.lastError);
+          showVaultLockerToast('No se pudieron guardar las credenciales', true);
+          return;
+        }
+
         if (response?.status === 'ok') {
           showVaultLockerToast(`Credenciales guardadas para ${site}`);
         } else {

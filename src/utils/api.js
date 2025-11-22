@@ -6,13 +6,15 @@ const apiUrlFromEnv = typeof import.meta !== 'undefined' ? import.meta?.env?.VIT
 
 export const API_BASE_URL = apiUrlFromEnv ?? 'http://localhost:3000';
 
-async function request(path, options) {
+async function request(path, options = {}) {
+  const mergedHeaders = {
+    'Content-Type': 'application/json',
+    ...(options.headers ?? {}),
+  };
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
-    },
     ...options,
+    headers: mergedHeaders,
   });
 
   if (!res.ok) {

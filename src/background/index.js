@@ -2,7 +2,7 @@ import { encryptData, decryptData } from '../utils/crypto.js';
 
 /**
  * @typedef {Object} Message
- * @property {'SAVE_CREDENTIAL' | 'GET_CREDENTIALS' | 'DELETE_CREDENTIAL'} type
+ * @property {'SAVE_CREDENTIAL' | 'GET_CREDENTIALS' | 'DELETE_CREDENTIAL' | 'GET_CREDENTIALS_WITH_PASSWORD'} type
  * @property {Object} [data]
  * @property {string} data.site
  * @property {string} data.username
@@ -36,6 +36,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ status: 'ok' });
       } else if (message.type === 'GET_CREDENTIALS') {
         const creds = await getAllCredentials(userId);
+        sendResponse({ status: 'ok', data: creds });
+      } else if (message.type === 'GET_CREDENTIALS_WITH_PASSWORD') {
+        const creds = await getAllCredentialsWithPasswords(userId);
         sendResponse({ status: 'ok', data: creds });
       } else if (message.type === 'DELETE_CREDENTIAL' && message.id) {
         await deleteCredential(userId, message.id);
@@ -98,6 +101,28 @@ async function getAllCredentials(userId) {
   }
 
   return existing;
+}
+
+async function getAllCredentialsWithPasswords(userId) {
+  const raw = await getAllCredentials(userId);
+  const enriched = [];
+
+  for (const entry of raw) {
+    if (!entry?.encrypted) continue;
+    try {
+      const plain = await decryptData(entry.encrypted);
+      enriched.push({
+        id: entry.id,
+        site: entry.site,
+        username: entry.username,
+        password: plain?.password || '',
+      });
+    } catch (error) {
+      console.warn('No se pudo descifrar una credencial para sugerir login', error);
+    }
+  }
+
+  return enriched;
 }
 
 /**
