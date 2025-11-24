@@ -16,6 +16,13 @@ Está diseñado bajo una arquitectura modular con tres capas principales:
 
 ---
 
+## 📄 Documentación
+- Características y alcance: `docs/FEATURES.md`
+- Metodología de desarrollo: `docs/METODOLOGIA.md`
+- Normas de cumplimiento y calidad: `docs/CUMPLIMIENTO.md`
+
+---
+
 ## 🚀 Stack Tecnológico
 
 ### **Extensión (MV3)**
