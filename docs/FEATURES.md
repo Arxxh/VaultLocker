@@ -22,13 +22,6 @@
 - Aislamiento por usuario: la bóveda se segmenta con claves por ID normalizado.
 - Validaciones y seguridad backend: `ValidationPipe` con `whitelist`, `helmet`, CORS configurable y Swagger protegido (en `vaultlocker-backend/src/main.ts`).
 
-## Tipos de usuario
-
-- Usuario regular: acceso al servicio con anuncios ligeros en la interfaz gratuita.
-- Usuario premium: mismas funciones sin anuncios; suscripción de 50 pesos mensuales.
-- Proveedores: terceros de infraestructura o integraciones (correo, nube) con acceso mínimo y contractual; no ven credenciales.
-- Gobierno: acceso solo ante requerimientos legales formales; no es un rol de uso diario dentro de la app.
-
 ## Limitaciones conocidas
 
 - Clave temporal: la derivación usa una clave fija; falta migrar a passphrase del usuario (Argon2id/PBKDF2 con salt único).
