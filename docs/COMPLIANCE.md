@@ -1,35 +1,24 @@
 # VaultLocker – Normas de Calidad y Cumplimiento
 
 ## Alcance
+
 - Extensión MV3 para gestión de contraseñas (React + WebCrypto) y backend NestJS en desarrollo.
 - Datos cubiertos: credenciales (sitio, usuario, contraseña cifrada), sesión del usuario y metadatos mínimos de sincronización.
 - Contexto: producto orientado a manejo de información sensible, con principios de privacidad por diseño y cifrado extremo a extremo.
 
 ## Normas de calidad aplicadas
-| Norma / guía | Justificación | Impacto en el usuario | Cumplimiento en VaultLocker | Referencia oficial |
-| --- | --- | --- | --- | --- |
-| OWASP ASVS v4.0 (L2) – Controles de autenticación, criptografía y almacenamiento | Base abierta y reconocida para aplicaciones que manejan datos sensibles | Reduce exposición a fallos comunes (inyección, exposición de datos, gestión de sesión) | Cifrado AES-GCM con claves derivadas (src/utils/crypto.js); almacenamiento aislado por usuario en `chrome.storage.local`; backend con `ValidationPipe` + `helmet` y CORS restringible (vaultlocker-backend/src/main.ts); sin carga de código remoto en la extensión | https://owasp.org/ASVS |
-| NIST SP 800-63B – Gestión de credenciales y autenticación | Marco de referencia para almacenamiento y verificación de secretos | Políticas claras de contraseñas, derivación fuerte de claves y resistencia a relleno de credenciales | Estado actual: cifrado local AES-256-GCM y PBKDF2; pendiente migrar la clave temporal a derivación desde passphrase del usuario (Argon2id/PBKDF2 con salt único) para cumplir plenamente | https://pages.nist.gov/800-63-3/sp800-63b.html |
-| GDPR/Privacy by Design – Minimización y control del titular | Productos de seguridad deben limitar datos y permitir borrado | Transparencia y control: menos datos expuestos, facilidad para revocar | Se guardan solo campos necesarios (sitio, usuario, contraseña cifrada); no hay telemetría; borrado de credenciales por usuario (`DELETE_CREDENTIAL`); faltan flujos formales de exportación/portabilidad y políticas de retención | https://gdpr.eu |
-| Chrome Web Store Program Policies / Manifest V3 | Alinea con requisitos de distribución y permisos mínimos para extensiones | El usuario ve permisos claros y reduce riesgo de abuso | Uso de MV3, permisos limitados a `storage` y `tabs`; service worker como background; contenido aislado. Pendiente reducir `matches: <all_urls>` a scopes acotados o permisos hospedados | https://developer.chrome.com/docs/webstore/program_policies |
-| OWASP Top 10 Web (2021) – A02/A03/A04 | Complementa ASVS con riesgos más frecuentes | Menos superficie frente a deserialización, XSS y control de acceso | Validación y sanitización en backend (`ValidationPipe` con `whitelist`); encabezados seguros con `helmet`; CORS configurables; pendiente agregar CSP explícita en frontend y pruebas SAST/DAST automatizadas | https://owasp.org/www-project-top-ten/ |
+
+| Norma / guía                                                                     | Justificación                                                             | Impacto en el usuario                                                                                | Cumplimiento en VaultLocker                                                                                                                                                                                                                                         | Referencia oficial                                          |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| OWASP ASVS v4.0 (L2) – Controles de autenticación, criptografía y almacenamiento | Base abierta y reconocida para aplicaciones que manejan datos sensibles   | Reduce exposición a fallos comunes (inyección, exposición de datos, gestión de sesión)               | Cifrado AES-GCM con claves derivadas (src/utils/crypto.js); almacenamiento aislado por usuario en `chrome.storage.local`; backend con `ValidationPipe` + `helmet` y CORS restringible (vaultlocker-backend/src/main.ts); sin carga de código remoto en la extensión | https://owasp.org/ASVS                                      |
+| NIST SP 800-63B – Gestión de credenciales y autenticación                        | Marco de referencia para almacenamiento y verificación de secretos        | Políticas claras de contraseñas, derivación fuerte de claves y resistencia a relleno de credenciales | Estado actual: cifrado local AES-256-GCM y PBKDF2; pendiente migrar la clave temporal a derivación desde passphrase del usuario (Argon2id/PBKDF2 con salt único) para cumplir plenamente                                                                            | https://pages.nist.gov/800-63-3/sp800-63b.html              |
+| GDPR/Privacy by Design – Minimización y control del titular                      | Productos de seguridad deben limitar datos y permitir borrado             | Transparencia y control: menos datos expuestos, facilidad para revocar                               | Se guardan solo campos necesarios (sitio, usuario, contraseña cifrada); no hay telemetría; borrado de credenciales por usuario (`DELETE_CREDENTIAL`); faltan flujos formales de exportación/portabilidad y políticas de retención                                   | https://gdpr.eu                                             |
+| Chrome Web Store Program Policies / Manifest V3                                  | Alinea con requisitos de distribución y permisos mínimos para extensiones | El usuario ve permisos claros y reduce riesgo de abuso                                               | Uso de MV3, permisos limitados a `storage` y `tabs`; service worker como background; contenido aislado. Pendiente reducir `matches: <all_urls>` a scopes acotados o permisos hospedados                                                                             | https://developer.chrome.com/docs/webstore/program_policies |
+| OWASP Top 10 Web (2021) – A02/A03/A04                                            | Complementa ASVS con riesgos más frecuentes                               | Menos superficie frente a deserialización, XSS y control de acceso                                   | Validación y sanitización en backend (`ValidationPipe` con `whitelist`); encabezados seguros con `helmet`; CORS configurables; pendiente agregar CSP explícita en frontend y pruebas SAST/DAST automatizadas                                                        | https://owasp.org/www-project-top-ten/                      |
 
 ## Controles técnicos actuales
+
 - Cifrado local: WebCrypto AES-256-GCM, IV aleatorio y derivación PBKDF2 (src/utils/crypto.js). Las contraseñas se guardan solo cifradas en `chrome.storage.local`.
 - Segmentación por usuario: claves de almacenamiento derivadas de ID normalizado para evitar mezclas de bóvedas entre usuarios (src/background/index.js).
 - Backend seguro por defecto: `helmet`, `ValidationPipe` con `whitelist`, CORS configurable por `CORS_ORIGINS`, documentación autenticada con Swagger (vaultlocker-backend/src/main.ts).
 - Principio de mínimos privilegios: permisos de extensión limitados a `storage` y `tabs`; sin librerías que ejecuten código remoto; no se incluyen trackers ni telemetría.
-
-## Brechas conocidas y próximas acciones
-- Derivación de clave maestra: reemplazar la clave temporal por passphrase del usuario usando Argon2id/PBKDF2 con salt único y contador de iteraciones parametrizable.
-- Afinar permisos del content script: limitar `matches` a dominios específicos o solicitar permisos en tiempo de uso.
-- Ciclo de vida de datos: definir políticas de retención/borrado y flujo de portabilidad/exportación para alinear con GDPR.
-- Pruebas de seguridad: agregar SAST/DAST en CI (dependabot/semgrep/zap) y pruebas de cifrado/rotación de claves.
-- Gestión de sesión backend: integrar JWT con expiración corta, rotación/refresh tokens y revocación en caso de cierre de sesión.
-
-## Evidencia rápida (ubicaciones en el repositorio)
-- Extensión: `src/utils/crypto.js` (cifrado), `src/background/index.js` (gestión de bóveda y aislamiento por usuario), `manifest.json` (permisos MV3).
-- Backend: `vaultlocker-backend/src/main.ts` (seguridad HTTP, validación, CORS), `vaultlocker-backend/prisma` (modelo de datos), `vaultlocker-backend/docker-compose.yml` (aislamiento de servicios).
-
-## Notas
-- Este documento describe el estado actual y las acciones planificadas; no constituye certificación formal. Las referencias son los textos normativos vigentes y deben consultarse para auditorías.
