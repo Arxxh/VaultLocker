@@ -2,7 +2,7 @@
 
 ## Alcance
 
-- Extensión MV3 para gestión de contraseñas (React + WebCrypto) y backend NestJS en desarrollo.
+- Extensión MV3 para gestión de contraseñas (WebCrypto) y backend NestJS en desarrollo.
 - Datos cubiertos: credenciales (sitio, usuario, contraseña cifrada), sesión del usuario y metadatos mínimos de sincronización.
 - Contexto: producto orientado a manejo de información sensible, con principios de privacidad por diseño y cifrado extremo a extremo.
 
