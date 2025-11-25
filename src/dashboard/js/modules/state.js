@@ -1,4 +1,4 @@
-import { getStoredSession } from '../authStorage';
+import { getStoredSession } from '../authStorage.js';
 
 const state = {
   cachedCredentials: [],
