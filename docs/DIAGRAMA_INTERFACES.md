@@ -1,38 +1,28 @@
-# Diagrama de interfaces – VaultLocker
+# Diagrama de interfaces (vista usuario) – VaultLocker
 
-Texto listo para pegar en Lucidchart AI y generar el diagrama de cómo se conectan extensión, dashboard y backend.
+Prompt corto para Lucidchart AI, enfocado en lo que el usuario ve y a dónde navega desde el popup. No incluye flujos internos de backend.
 
 ## Prompt para Lucidchart AI
 
 ```
-Genera un diagrama de arquitectura por capas (Navegador/Extensión, Backend, Persistencia) para el proyecto VaultLocker. Usa colores distintos por capa y flechas dirigidas con etiquetas breves.
+Genera un diagrama simple de experiencia de usuario para la extensión VaultLocker. Solo mostrar pantallas y navegación que el usuario ve desde el popup.
 
-Nodos / componentes:
-- Usuario del navegador.
-- Popup de la extensión (React + Tailwind) [src/popup/index.html|index.js].
-- Dashboard en pestaña nueva (React + Tailwind) [src/dashboard/*].
-- Content Script que intercepta formularios [src/content/content.js].
-- Service Worker de background que gestiona el vault local [src/background/index.js].
-- Módulo WebCrypto AES-GCM (cifrado/descifrado) [src/utils/crypto.js].
-- Almacenamiento Chrome Storage local (vault cifrada por usuario).
-- API Backend NestJS (AuthController, CredentialsController) [vaultlocker-backend/src/*].
-- Prisma ORM.
-- Base de datos PostgreSQL.
-- Swagger UI (documentación) junto al backend.
+Nodos / pantallas:
+- Popup inicial (extensión, ventana pequeña).
+- Botón "Abrir panel" que abre el Dashboard en nueva pestaña.
+- Estado "No autenticado" en popup: muestra acciones Login y Register.
+- Estado "Autenticado" en popup: muestra listado de credenciales con buscador y contador.
+- Dashboard (pestaña completa) con secciones: Login, Register, Recover, Dashboard principal (lista credenciales, perfil).
 
-Flechas / relaciones:
-1) Usuario → Popup: abre la extensión y ve credenciales.
-2) Usuario → Dashboard: abre pestaña completa para gestionar cuenta.
-3) Content Script → Background: mensaje SAVE_CREDENTIAL con {site, username, password} al detectar submit de login.
-4) Background → WebCrypto → Chrome Storage: cifra (AES-GCM) y guarda credenciales por usuario (clave credentials_<userId>).
-5) Popup → Background: mensajes GET_CREDENTIALS / GET_CREDENTIALS_WITH_PASSWORD para listar desde el vault local.
-6) Dashboard ↔ Background: lee y borra credenciales locales (GET_CREDENTIALS, DELETE_CREDENTIAL) y escucha cambios de chrome.storage.onChanged.
-7) Popup/Dashboard → API Backend: peticiones HTTP a /auth/register, /auth/login, /auth/profile, /credentials con token JWT.
-8) Backend → Prisma → PostgreSQL: persiste usuarios y credenciales. Swagger UI documenta los endpoints.
-9) Fallback: Dashboard lee sesión desde Chrome Storage si se abrió fuera del popup (hydrateSessionFromExtensionStorage).
+Flujos / flechas:
+1) Usuario abre Popup.
+2) Si no autenticado: desde Popup → Login (en Dashboard) o Register (en Dashboard) via botón/CTA.
+3) Si autenticado: Popup muestra credenciales y botón para abrir Dashboard; al hacer clic va a Dashboard principal.
+4) Dashboard principal permite volver a Popup (opcional) o cerrar pestaña.
+5) Desde Dashboard se puede ir a Recover (recuperar cuenta) o a Login/Register si no hay sesión.
 
-Indicaciones visuales:
-- Capa Navegador/Extensión en un color, Backend en otro, Persistencia en otro.
-- Etiquetar líneas de Chrome runtime (runtime.sendMessage) y las de HTTP (fetch).
-- Mostrar cifrado local antes de escribir en Chrome Storage.
+Notas visuales:
+- Separar con color o contenedor la capa "Popup" y la capa "Dashboard en pestaña".
+- Etiquetar flechas con la acción (ej. "Abrir panel", "Login", "Register", "Ir a Recover").
+- No dibujar infraestructura backend ni almacenamiento; solo pantallas y enlaces visibles al usuario.
 ```
