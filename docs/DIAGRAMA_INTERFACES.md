@@ -1,7 +1,6 @@
 # Diagrama de interfaces (vista usuario) – VaultLocker
 
 ```
-Genera un diagrama simple de experiencia de usuario para la extensión VaultLocker. Solo mostrar pantallas y navegación que el usuario ve desde el popup.
 
 Nodos / pantallas:
 - Popup inicial (extensión, ventana pequeña).
