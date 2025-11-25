@@ -1,9 +1,5 @@
 # Diagrama de interfaces (vista usuario) – VaultLocker
 
-Prompt corto para Lucidchart AI, enfocado en lo que el usuario ve y a dónde navega desde el popup. No incluye flujos internos de backend.
-
-## Prompt para Lucidchart AI
-
 ```
 Genera un diagrama simple de experiencia de usuario para la extensión VaultLocker. Solo mostrar pantallas y navegación que el usuario ve desde el popup.
 
